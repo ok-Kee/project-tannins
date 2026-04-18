@@ -1,0 +1,12 @@
+schema: spec-driven
+
+context: |
+  Project Tannins — Wine pairing PWA for restaurant servers
+  Tech stack: Node.js, Express, SQLite (better-sqlite3), Vanilla JS PWA, Anthropic Claude API
+  No build step for frontend (vanilla JS, tablet-first)
+  Multi-tenant via restaurant slug in URL: /waitingfortips/{slug}/de (admin) and /waitingfortips/{slug}/server (lookup)
+  Auth: HTTP Basic Auth (bcrypt) for admin routes; server lookup is public
+  Image uploads: Multer → /uploads/{slug}/
+  Seeding: npm run seed:import (Excel) → npm run seed:enrich (Claude API for general_pairing)
+  First restaurant: Tannins Bar, slug=tannins-bar, 86 wines seeded
+  Domain: restaurant wine list management, server-facing pairing lookup tool

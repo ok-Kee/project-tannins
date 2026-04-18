@@ -1,0 +1,9 @@
+{
+  "name": "Tannins",
+  "short_name": "Tannins",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#8b2252",
+  "icons": []
+}

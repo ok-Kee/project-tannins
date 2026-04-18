@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tannins Admin</title>
+  <link rel="manifest" href="/public/manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --bg: #1c1a18;
+      --surface: #272420;
+      --surface2: #312d29;
+      --border: #3d3731;
+      --accent: #9b3f5e;
+      --accent-hover: #b24e71;
+      --text: #f0ebe4;
+      --text-muted: #9a9189;
+      --green: #4a8c5c;
+      --red-warn: #8c3a3a;
+      --radius: 8px;
+      --font: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header h1 { margin: 0; font-size: 1.2rem; font-weight: 600; color: var(--text); }
+    header .slug-badge {
+      font-size: 0.75rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: var(--text-muted);
+    }
+    header .mode-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    header .mode-badge.new { background: var(--green); color: #fff; }
+    header .mode-badge.edit { background: var(--accent); color: #fff; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      height: calc(100vh - 53px);
+    }
+
+    /* ── FORM PANEL ── */
+    .form-panel {
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.78rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 0.55rem 0.75rem;
+      font-size: 0.95rem;
+      font-family: var(--font);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    input[readonly], textarea[readonly] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    /* combo box */
+    .combo-wrap { position: relative; }
+    .combo-wrap input { padding-right: 2rem; }
+    .combo-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .combo-list.open { display: block; }
+    .combo-item {
+      padding: 0.55rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .combo-item:hover, .combo-item.active { background: var(--surface); }
+    .combo-item .ci-sub { font-size: 0.75rem; color: var(--text-muted); }
+    .combo-empty { padding: 0.6rem 0.75rem; font-size: 0.85rem; color: var(--text-muted); }
+
+    /* type checkboxes */
+    .checkbox-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .checkbox-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      user-select: none;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .checkbox-pill input { display: none; }
+    .checkbox-pill.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* image upload */
+    .file-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .file-preview {
+      width: 80px; height: 80px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      object-fit: cover;
+      display: none;
+      background: var(--surface2);
+    }
+    .file-preview.show { display: block; }
+    .file-input-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: border-color 0.15s;
+    }
+    .file-input-label:hover { border-color: var(--accent); color: var(--text); }
+    input[type="file"] { display: none; }
+
+    /* actions */
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      padding-top: 0.5rem;
+    }
+    button {
+      font-family: var(--font);
+      font-size: 0.9rem;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.15s;
+      min-height: 44px;
+    }
+    .btn-save { background: var(--accent); color: #fff; flex: 1; }
+    .btn-save:hover { background: var(--accent-hover); }
+    .btn-clear { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-clear:hover { color: var(--text); border-color: var(--text-muted); }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--green);
+      color: #fff;
+      padding: 0.7rem 1.2rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.error { background: var(--red-warn); }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── LIST PANEL ── */
+    .list-panel {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .list-header {
+      padding: 1rem 1.25rem 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+    .list-header h2 { margin: 0; font-size: 1rem; font-weight: 600; }
+    .list-search {
+      margin-left: auto;
+      width: 220px;
+    }
+    .list-search input {
+      width: 100%;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.85rem;
+    }
+    .entry-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    thead th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 53px;
+      background: var(--bg);
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    tbody tr:hover { background: var(--surface); }
+    tbody tr.selected { background: var(--surface2); outline: 2px solid var(--accent); outline-offset: -2px; }
+    tbody td { padding: 0.65rem 1rem; }
+    .td-name { font-weight: 500; }
+    .td-type { color: var(--text-muted); font-size: 0.8rem; }
+    .td-price { font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: 0.82rem; }
+    .td-rack {
+      font-size: 0.8rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      display: inline-block;
+    }
+    .empty-state {
+      padding: 3rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .btn-rack-add {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      padding: 0 0.75rem;
+      height: 38px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: var(--font);
+      flex-shrink: 0;
+    }
+    .btn-rack-add:hover { color: var(--text); border-color: var(--accent); }
+    .btn-rack-save {
+      background: var(--green);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 0.82rem;
+      padding: 0 0.75rem;
+      height: 36px;
+      cursor: pointer;
+      font-family: var(--font);
+      white-space: nowrap;
+    }
+    .btn-rack-cancel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      padding: 0 0.6rem;
+      height: 36px;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    #addRackRow { display: flex; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .form-panel { border-right: none; border-bottom: 1px solid var(--border); max-height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Tannins Admin</h1>
+  <span class="slug-badge" id="slugBadge"></span>
+  <span class="mode-badge new" id="modeBadge">New Entry</span>
+</header>
+
+<div class="layout">
+  <!-- FORM PANEL -->
+  <div class="form-panel">
+
+    <div class="field">
+      <label>Rack #</label>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <select id="rackId" style="flex:1"></select>
+        <button class="btn-rack-add" id="btnAddRack" title="Add a new rack number">+ Rack</button>
+      </div>
+      <div id="addRackRow" style="display:none;margin-top:0.4rem;display:none;gap:0.4rem;align-items:center">
+        <input type="text" id="newRackInput" placeholder="e.g. A1, 42, BTG" style="flex:1">
+        <button class="btn-rack-save" id="btnSaveRack">Add</button>
+        <button class="btn-rack-cancel" id="btnCancelRack">✕</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Beverage Name</label>
+      <div class="combo-wrap">
+        <input type="text" id="beverageInput" placeholder="Search beverages…" autocomplete="off">
+        <div class="combo-list" id="beverageList"></div>
+      </div>
+      <input type="hidden" id="beverageId">
+    </div>
+
+    <div class="field">
+      <label>Type</label>
+      <div class="checkbox-grid" id="typeGrid">
+        <!-- pills rendered by JS -->
+      </div>
+    </div>
+
+    <div class="field">
+      <label>General Pairing <span style="font-size:0.7rem;color:var(--text-muted)">(auto-filled)</span></label>
+      <textarea id="generalPairing" readonly placeholder="Select a beverage to auto-fill…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Sommelier Comments</label>
+      <textarea id="sommelierComments" placeholder="Tasting notes, aromas, style…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>House Pairing</label>
+      <textarea id="housePairing" placeholder="This restaurant's specific pairings…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Snack Notes</label>
+      <textarea id="snackNotes" placeholder="Snack pairing suggestions…"></textarea>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Price per Bottle ($)</label>
+        <input type="number" id="priceBtl" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Price by Glass ($)</label>
+        <input type="number" id="priceBtg" placeholder="0.00" step="0.01" min="0">
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field file-field">
+        <label>Label Image</label>
+        <img class="file-preview" id="labelPreview" alt="Label">
+        <label class="file-input-label" for="labelImage">📷 Choose image…</label>
+        <input type="file" id="labelImage" accept="image/jpeg,image/png">
+      </div>
+      <div class="field file-field">
+        <label>Bottle Image</label>
+        <img class="file-preview" id="bottlePreview" alt="Bottle">
+        <label class="file-input-label" for="bottleImage">📷 Choose image…</label>
+        <input type="file" id="bottleImage" accept="image/jpeg,image/png">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-clear" id="btnClear">Clear</button>
+      <button class="btn-save" id="btnSave">Save Entry</button>
+    </div>
+
+  </div>
+
+  <!-- LIST PANEL -->
+  <div class="list-panel">
+    <div class="list-header">
+      <h2>Wine List</h2>
+      <span class="entry-count" id="entryCount"></span>
+      <div class="list-search">
+        <input type="text" id="listSearch" placeholder="Filter list…">
+      </div>
+    </div>
+    <div id="listBody">
+      <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const slug = location.pathname.split('/')[2];
+  document.getElementById('slugBadge').textContent = slug;
+
+  function $(id) { return document.getElementById(id); }
+  function fmt$(v) { return v != null ? `$${Number(v).toFixed(2)}` : '—'; }
+
+  function showToast(msg, isError = false) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let editingId = null;
+  let allEntries = [];
+  let selectedBeverage = null;
+
+  // ── Type checkboxes ────────────────────────────────────────────────────────
+  const TYPES = ['White','Red','Rosé','Champagne','Sparkling Wine','Beer','Cocktail','Mocktail','Soda'];
+  const typeGrid = $('typeGrid');
+  TYPES.forEach(t => {
+    const pill = document.createElement('label');
+    pill.className = 'checkbox-pill';
+    pill.innerHTML = `<input type="checkbox" value="${t}"><span>${t}</span>`;
+    pill.querySelector('input').addEventListener('change', () => {
+      pill.classList.toggle('checked', pill.querySelector('input').checked);
+    });
+    typeGrid.appendChild(pill);
+  });
+
+  function getSelectedTypes() {
+    return [...typeGrid.querySelectorAll('input:checked')].map(i => i.value);
+  }
+  function setSelectedTypes(arr) {
+    typeGrid.querySelectorAll('.checkbox-pill').forEach(pill => {
+      const val = pill.querySelector('input').value;
+      const on = arr.includes(val);
+      pill.querySelector('input').checked = on;
+      pill.classList.toggle('checked', on);
+    });
+  }
+
+  // ── Rack dropdown ─────────────────────────────────────────────────────────
+  async function loadRacks(selectId) {
+    const res = await fetch(`/api/${slug}/racks`);
+    const racks = await res.json();
+    const sel = $('rackId');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— No rack —</option>';
+    racks.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.id;
+      o.textContent = r.rack_number;
+      sel.appendChild(o);
+    });
+    if (selectId) sel.value = selectId;
+    else if (prev) sel.value = prev;
+  }
+
+  // Inline rack creation
+  $('btnAddRack').addEventListener('click', () => {
+    $('addRackRow').style.display = 'flex';
+    $('newRackInput').focus();
+    $('btnAddRack').style.display = 'none';
+  });
+
+  $('btnCancelRack').addEventListener('click', () => {
+    $('addRackRow').style.display = 'none';
+    $('newRackInput').value = '';
+    $('btnAddRack').style.display = '';
+  });
+
+  async function saveNewRack() {
+    const label = $('newRackInput').value.trim();
+    if (!label) return;
+    try {
+      const res = await fetch(`/api/${slug}/racks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rack_number: label }),
+      });
+      if (!res.ok) { showToast('Failed to create rack', true); return; }
+      const { id } = await res.json();
+      $('addRackRow').style.display = 'none';
+      $('newRackInput').value = '';
+      $('btnAddRack').style.display = '';
+      await loadRacks(String(id));
+      showToast(`Rack "${label}" added`);
+    } catch (e) {
+      showToast('Network error', true);
+    }
+  }
+
+  $('btnSaveRack').addEventListener('click', saveNewRack);
+  $('newRackInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveNewRack();
+    if (e.key === 'Escape') $('btnCancelRack').click();
+  });
+
+  // ── Beverage combo box ─────────────────────────────────────────────────────
+  let beverageDebounce = null;
+  const beverageInput = $('beverageInput');
+  const beverageList = $('beverageList');
+
+  beverageInput.addEventListener('input', () => {
+    clearTimeout(beverageDebounce);
+    if (!beverageInput.value.trim()) {
+      beverageList.classList.remove('open');
+      return;
+    }
+    beverageDebounce = setTimeout(() => searchBeverages(beverageInput.value), 200);
+  });
+
+  beverageInput.addEventListener('focus', () => {
+    if (beverageInput.value.trim()) searchBeverages(beverageInput.value);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.combo-wrap')) beverageList.classList.remove('open');
+  });
+
+  async function searchBeverages(q) {
+    const res = await fetch(`/api/beverages?q=${encodeURIComponent(q)}`);
+    const items = await res.json();
+    renderBeverageList(items);
+  }
+
+  function renderBeverageList(items) {
+    beverageList.innerHTML = '';
+    if (!items.length) {
+      beverageList.innerHTML = '<div class="combo-empty">No beverages found</div>';
+      beverageList.classList.add('open');
+      return;
+    }
+    items.forEach(bev => {
+      const div = document.createElement('div');
+      div.className = 'combo-item';
+      div.innerHTML = `<span>${bev.name}</span><span class="ci-sub">${bev.type}</span>`;
+      div.addEventListener('mousedown', e => {
+        e.preventDefault();
+        selectBeverage(bev);
+      });
+      beverageList.appendChild(div);
+    });
+    beverageList.classList.add('open');
+  }
+
+  function selectBeverage(bev) {
+    selectedBeverage = bev;
+    beverageInput.value = bev.name;
+    $('beverageId').value = bev.id;
+    $('generalPairing').value = bev.general_pairing || '';
+    // Auto-set type pill if not already selected
+    if (!getSelectedTypes().length) setSelectedTypes([bev.type]);
+    beverageList.classList.remove('open');
+  }
+
+  // ── Image previews ─────────────────────────────────────────────────────────
+  function wirePreview(inputId, previewId) {
+    $(inputId).addEventListener('change', e => {
+      const file = e.target.files[0];
+      const preview = $(previewId);
+      if (file) {
+        preview.src = URL.createObjectURL(file);
+        preview.classList.add('show');
+      }
+    });
+  }
+  wirePreview('labelImage', 'labelPreview');
+  wirePreview('bottleImage', 'bottlePreview');
+
+  // ── Form clear / populate ──────────────────────────────────────────────────
+  function clearForm() {
+    editingId = null;
+    selectedBeverage = null;
+    beverageInput.value = '';
+    $('beverageId').value = '';
+    $('generalPairing').value = '';
+    $('sommelierComments').value = '';
+    $('housePairing').value = '';
+    $('snackNotes').value = '';
+    $('priceBtl').value = '';
+    $('priceBtg').value = '';
+    $('rackId').value = '';
+    $('labelImage').value = '';
+    $('bottleImage').value = '';
+    $('labelPreview').classList.remove('show');
+    $('bottlePreview').classList.remove('show');
+    setSelectedTypes([]);
+    updateModeBadge();
+    document.querySelectorAll('tbody tr.selected').forEach(r => r.classList.remove('selected'));
+  }
+
+  function populateForm(entry) {
+    editingId = entry.id;
+    beverageInput.value = entry.beverage_name || '';
+    $('beverageId').value = entry.beverage_id;
+    $('generalPairing').value = entry.general_pairing || '';
+    $('sommelierComments').value = entry.sommelier_comments || '';
+    $('housePairing').value = entry.house_pairing || '';
+    $('snackNotes').value = entry.snack_notes || '';
+    $('priceBtl').value = entry.price_btl != null ? entry.price_btl : '';
+    $('priceBtg').value = entry.price_btg != null ? entry.price_btg : '';
+    $('rackId').value = entry.rack_id || '';
+    // type stored as comma-separated
+    const types = entry.beverage_type ? [entry.beverage_type] : [];
+    setSelectedTypes(types);
+    // Show existing images
+    if (entry.label_image_path) {
+      $('labelPreview').src = '/' + entry.label_image_path.replace(/\\/g, '/');
+      $('labelPreview').classList.add('show');
+    } else {
+      $('labelPreview').classList.remove('show');
+    }
+    if (entry.bottle_image_path) {
+      $('bottlePreview').src = '/' + entry.bottle_image_path.replace(/\\/g, '/');
+      $('bottlePreview').classList.add('show');
+    } else {
+      $('bottlePreview').classList.remove('show');
+    }
+    updateModeBadge();
+    $('beverageInput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function updateModeBadge() {
+    const badge = $('modeBadge');
+    if (editingId) {
+      badge.textContent = 'Editing';
+      badge.className = 'mode-badge edit';
+    } else {
+      badge.textContent = 'New Entry';
+      badge.className = 'mode-badge new';
+    }
+  }
+
+  // ── Save ───────────────────────────────────────────────────────────────────
+  $('btnSave').addEventListener('click', async () => {
+    const bevId = $('beverageId').value;
+    if (!bevId) { showToast('Select a beverage first', true); return; }
+
+    const fd = new FormData();
+    fd.append('beverage_id', bevId);
+    fd.append('rack_id', $('rackId').value);
+    fd.append('sommelier_comments', $('sommelierComments').value);
+    fd.append('house_pairing', $('housePairing').value);
+    fd.append('snack_notes', $('snackNotes').value);
+    fd.append('price_btl', $('priceBtl').value);
+    fd.append('price_btg', $('priceBtg').value);
+    const labelFile = $('labelImage').files[0];
+    const bottleFile = $('bottleImage').files[0];
+    if (labelFile) fd.append('label_image', labelFile);
+    if (bottleFile) fd.append('bottle_image', bottleFile);
+
+    const url = editingId
+      ? `/api/${slug}/wine-list/${editingId}`
+      : `/api/${slug}/wine-list`;
+    const method = editingId ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, { method, body: fd });
+      if (!res.ok) {
+        const err = await res.json();
+        showToast(err.error || 'Save failed', true);
+        return;
+      }
+      showToast(editingId ? 'Entry updated' : 'Entry saved');
+      clearForm();
+      await loadList();
+    } catch (e) {
+      showToast('Network error', true);
+    }
+  });
+
+  $('btnClear').addEventListener('click', clearForm);
+
+  // ── Wine list table ────────────────────────────────────────────────────────
+  function renderList(entries) {
+    const listBody = $('listBody');
+    $('entryCount').textContent = `${entries.length} wines`;
+    if (!entries.length) {
+      listBody.innerHTML = '<div class="empty-state">No entries yet. Add one using the form.</div>';
+      return;
+    }
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Beverage</th>
+          <th>Type</th>
+          <th>Rack</th>
+          <th>BTG</th>
+          <th>BTL</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector('tbody');
+    entries.forEach(entry => {
+      const tr = document.createElement('tr');
+      if (entry.id === editingId) tr.classList.add('selected');
+      tr.innerHTML = `
+        <td class="td-name">${entry.beverage_name}</td>
+        <td class="td-type">${entry.beverage_type || '—'}</td>
+        <td>${entry.rack_number ? `<span class="td-rack">${entry.rack_number}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+        <td class="td-price">${fmt$(entry.price_btg)}</td>
+        <td class="td-price">${fmt$(entry.price_btl)}</td>
+      `;
+      tr.addEventListener('click', () => {
+        document.querySelectorAll('tbody tr.selected').forEach(r => r.classList.remove('selected'));
+        tr.classList.add('selected');
+        populateForm(entry);
+      });
+      tbody.appendChild(tr);
+    });
+    listBody.innerHTML = '';
+    listBody.appendChild(table);
+  }
+
+  async function loadList() {
+    const res = await fetch(`/api/${slug}/wine-list`);
+    allEntries = await res.json();
+    applyFilter();
+  }
+
+  function applyFilter() {
+    const q = $('listSearch').value.toLowerCase();
+    const filtered = q
+      ? allEntries.filter(e => (e.beverage_name || '').toLowerCase().includes(q) || (e.rack_number || '').toLowerCase().includes(q))
+      : allEntries;
+    renderList(filtered);
+  }
+
+  $('listSearch').addEventListener('input', applyFilter);
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  (async () => {
+    await Promise.all([loadRacks(), loadList()]);
+  })();
+</script>
+</body>
+</html>
