@@ -14,8 +14,7 @@
 ## 3. Verification
 
 - [x] 3.1 Confirm app starts locally with `DATA_DIR` set to a temp directory and DB + uploads resolve to that path
-- [ ] 3.2 Push to GitHub, connect repo to Render via Blueprint, and confirm service starts with disk mounted
-- [ ] 3.3 Set env vars in Render dashboard (`DATA_DIR=/data`, `ANTHROPIC_API_KEY`, `TANNINS_BAR_PASS`)
-- [ ] 3.4 Run `npm run seed:import` as a Render one-off job and confirm DB is populated on `/data`
-- [ ] 3.5 Run `npm run seed:enrich` as a Render one-off job and confirm pairings are populated
-- [ ] 3.6 Smoke-test the live `.onrender.com` URL: server lookup, admin login, image upload
+- [x] 3.2 Push to GitHub, connect repo to Render via Blueprint, and confirm service starts with disk mounted
+- [x] 3.3 Set env vars in Render dashboard (`DATA_DIR=/data`, `ANTHROPIC_API_KEY`, `TANNINS_BAR_PASS`)
+- [x] 3.4 SCP the local `db/tannins.db` to the Render service at `/data/tannins.db` via the Render shell
+- [x] 3.6 Smoke-test the live `.onrender.com` URL: server lookup, admin login, image upload
