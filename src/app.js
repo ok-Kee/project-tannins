@@ -12,7 +12,10 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+const uploadsRoot = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'uploads')
+  : path.join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsRoot));
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Beverages — fully public

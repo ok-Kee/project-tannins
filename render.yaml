@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: project-tannins
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node src/app.js
+    disk:
+      name: tannins-data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TANNINS_BAR_PASS
+        sync: false

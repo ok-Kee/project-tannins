@@ -6,7 +6,10 @@ const db = require('../db');
 const router = express.Router({ mergeParams: true });
 
 function getUploadDir(slug) {
-  const dir = path.join(__dirname, '../../uploads', slug);
+  const root = process.env.DATA_DIR
+    ? path.join(process.env.DATA_DIR, 'uploads')
+    : path.join(__dirname, '../../uploads');
+  const dir = path.join(root, slug);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -72,8 +75,8 @@ router.post('/', (req, res) => {
     const { beverage_id, rack_id, sommelier_comments, house_pairing, snack_notes, price_btl, price_btg } = req.body;
     if (!beverage_id) return res.status(400).json({ error: 'beverage_id required' });
 
-    const labelPath = req.files?.label_image?.[0]?.path ? path.relative(process.cwd(), req.files.label_image[0].path) : null;
-    const bottlePath = req.files?.bottle_image?.[0]?.path ? path.relative(process.cwd(), req.files.bottle_image[0].path) : null;
+    const labelPath = req.files?.label_image?.[0] ? path.join('uploads', slug, req.files.label_image[0].filename) : null;
+    const bottlePath = req.files?.bottle_image?.[0] ? path.join('uploads', slug, req.files.bottle_image[0].filename) : null;
 
     const result = db.prepare(`
       INSERT INTO wine_list (restaurant_id, beverage_id, rack_id, sommelier_comments, house_pairing, snack_notes, price_btl, price_btg, label_image_path, bottle_image_path)
@@ -98,11 +101,11 @@ router.put('/:id', (req, res) => {
 
     const { beverage_id, rack_id, sommelier_comments, house_pairing, snack_notes, price_btl, price_btg } = req.body;
 
-    const labelPath = req.files?.label_image?.[0]?.path
-      ? path.relative(process.cwd(), req.files.label_image[0].path)
+    const labelPath = req.files?.label_image?.[0]
+      ? path.join('uploads', slug, req.files.label_image[0].filename)
       : existing.label_image_path;
-    const bottlePath = req.files?.bottle_image?.[0]?.path
-      ? path.relative(process.cwd(), req.files.bottle_image[0].path)
+    const bottlePath = req.files?.bottle_image?.[0]
+      ? path.join('uploads', slug, req.files.bottle_image[0].filename)
       : existing.bottle_image_path;
 
     db.prepare(`
