@@ -258,9 +258,13 @@
       font-size: 0.9rem;
       line-height: 1.6;
       color: var(--text);
-      white-space: pre-wrap;
     }
     .section-text.empty { color: var(--text-muted); font-style: italic; }
+    .section-text p { margin: 0 0 0.4rem; }
+    .section-text p:last-child { margin-bottom: 0; }
+    .section-text ul { margin: 0; padding-left: 1.2rem; }
+    .section-text li { margin-bottom: 0.25rem; }
+    .section-text strong { color: var(--text); }
 
     .modal-images {
       display: flex;
@@ -460,10 +464,29 @@
   }
 
   // ── Modal ──────────────────────────────────────────────────────────────────
+  function mdToHtml(text) {
+    const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const lines = esc.split('\n');
+    const out = [];
+    let inList = false;
+    for (const raw of lines) {
+      const line = raw.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      if (/^[-*] /.test(line)) {
+        if (!inList) { out.push('<ul>'); inList = true; }
+        out.push('<li>' + line.slice(2) + '</li>');
+      } else {
+        if (inList) { out.push('</ul>'); inList = false; }
+        if (line.trim()) out.push('<p>' + line + '</p>');
+      }
+    }
+    if (inList) out.push('</ul>');
+    return out.join('');
+  }
+
   function setText(elId, val, fallback = 'Not specified') {
     const el = $(elId);
     if (val && val.trim()) {
-      el.textContent = val;
+      el.innerHTML = mdToHtml(val);
       el.classList.remove('empty');
     } else {
       el.textContent = fallback;
