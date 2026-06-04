@@ -45,7 +45,31 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS menu_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
+    name TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    sort_order INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS menu_item_pairings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    menu_item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+    wine_list_id INTEGER NOT NULL REFERENCES wine_list(id) ON DELETE CASCADE,
+    sort_order INTEGER DEFAULT 0,
+    UNIQUE(menu_item_id, wine_list_id)
+  );
 `);
+
+// Add logo_image_path to restaurants for existing databases
+try {
+  db.exec('ALTER TABLE restaurants ADD COLUMN logo_image_path TEXT');
+} catch (e) {
+  if (!e.message.includes('duplicate column name')) throw e;
+}
 
 db.close();
 console.log(`Database initialized at ${dbPath}`);

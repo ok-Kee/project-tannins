@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tannins — Wine Lookup</title>
+  <title>Tannins — Cuisine</title>
   <link rel="manifest" href="/public/manifest.json">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -66,100 +66,68 @@
     }
     .btn-nav-link:hover { color: var(--text); border-color: var(--accent); }
 
-    /* category filter chips */
-    .filter-chips {
-      padding: 0.6rem 1.25rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .chip {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      color: var(--text-muted);
-      font-family: var(--font);
-      font-size: 0.8rem;
-      font-weight: 500;
-      padding: 5px 12px;
-      min-height: 32px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.12s, border-color 0.12s, color 0.12s;
-    }
-    .chip:hover { color: var(--text); border-color: var(--border); }
-    .chip.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
+    /* ── MENU VIEW ──────────────────────────────────────────────────────────── */
+    #menuView { display: block; }
+    #pairingsView { display: none; }
 
-    .search-bar {
-      padding: 1rem 1.25rem;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-
-    .search-field { display: flex; flex-direction: column; gap: 4px; }
-    label.field-label {
+    .category-group { padding: 0.5rem 0; }
+    .category-heading {
+      padding: 0.6rem 1.25rem 0.3rem;
       font-size: 0.72rem;
-      font-weight: 500;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.07em;
       color: var(--text-muted);
     }
 
-    input[type="text"], select {
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      min-height: 60px;
+      transition: background 0.1s;
+    }
+    .menu-item:hover { background: var(--surface); }
+    .menu-item:active { background: var(--surface2); }
+    .mi-info { flex: 1; }
+    .mi-name { font-weight: 500; font-size: 0.95rem; line-height: 1.3; }
+    .mi-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+    .mi-chevron { color: var(--text-muted); font-size: 0.9rem; }
+
+    /* ── PAIRINGS VIEW ──────────────────────────────────────────────────────── */
+    .pairings-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .btn-back {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       color: var(--text);
-      padding: 0.65rem 0.85rem;
-      font-size: 1rem;
       font-family: var(--font);
-      width: 100%;
-      outline: none;
-      min-height: 44px;
+      font-size: 0.85rem;
+      padding: 0 0.85rem;
+      min-height: 36px;
+      min-width: 44px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       transition: border-color 0.15s;
     }
-    input[type="text"]:focus, select:focus { border-color: var(--accent); }
+    .btn-back:hover { border-color: var(--accent); }
 
-    /* combo */
-    .combo-wrap { position: relative; }
-    .combo-list {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0; right: 0;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      max-height: 280px;
-      overflow-y: auto;
-      z-index: 100;
-      display: none;
-    }
-    .combo-list.open { display: block; }
-    .combo-item {
-      padding: 0.7rem 0.85rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-      min-height: 44px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 2px;
-    }
-    .combo-item:hover, .combo-item.active { background: var(--surface); }
-    .combo-item .ci-sub { font-size: 0.75rem; color: var(--text-muted); }
-
-    /* results */
-    .results {
-      padding: 0.75rem 0;
+    .pairings-dish-name {
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1;
+      line-height: 1.3;
     }
 
     .result-item {
@@ -174,7 +142,6 @@
     }
     .result-item:hover { background: var(--surface); }
     .result-item:active { background: var(--surface2); }
-
     .ri-rack {
       min-width: 44px;
       min-height: 44px;
@@ -219,9 +186,7 @@
       align-items: flex-end;
       justify-content: center;
     }
-    .modal-overlay.open {
-      display: flex;
-    }
+    .modal-overlay.open { display: flex; }
 
     @media (min-width: 600px) {
       .modal-overlay { align-items: center; }
@@ -280,10 +245,7 @@
     }
     .btn-close:hover { background: var(--border); }
 
-    .modal-prices {
-      display: flex;
-      gap: 1rem;
-    }
+    .modal-prices { display: flex; gap: 1rem; }
     .price-chip {
       background: var(--surface2);
       border: 1px solid var(--border);
@@ -315,10 +277,7 @@
     .section-text li { margin-bottom: 0.25rem; }
     .section-text strong { color: var(--text); }
 
-    .modal-images {
-      display: flex;
-      gap: 0.75rem;
-    }
+    .modal-images { display: flex; gap: 0.75rem; }
     .modal-img {
       flex: 1;
       border-radius: var(--radius);
@@ -327,40 +286,30 @@
       object-fit: contain;
       background: var(--surface2);
     }
-
-    @media (max-width: 640px) {
-      .search-bar { grid-template-columns: 1fr; }
-    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Tannins</h1>
+  <h1>Tannins — Cuisine</h1>
   <span class="slug-badge" id="slugBadge"></span>
   <a class="btn-nav-link" id="btnAdmin" href="#" target="_blank">Admin</a>
 </header>
 
-<div class="filter-chips" id="filterChips"></div>
-
-<div class="search-bar">
-  <div class="search-field">
-    <label class="field-label">Rack #</label>
-    <select id="rackSelect">
-      <option value="">— All racks —</option>
-    </select>
-  </div>
-  <div class="search-field">
-    <label class="field-label">Beverage Name</label>
-    <div class="combo-wrap">
-      <input type="text" id="beverageSearch" placeholder="Search wines…" autocomplete="off">
-      <div class="combo-list" id="beverageList"></div>
-    </div>
+<!-- MENU VIEW -->
+<div id="menuView">
+  <div id="menuGroups">
+    <div class="empty-state">Loading…</div>
   </div>
 </div>
 
-<div class="results" id="results">
-  <div class="empty-state">Loading…</div>
+<!-- PAIRINGS VIEW -->
+<div id="pairingsView">
+  <div class="pairings-header">
+    <button class="btn-back" id="btnBack">← Menu</button>
+    <div class="pairings-dish-name" id="pairingsDishName"></div>
+  </div>
+  <div id="pairingsList"></div>
 </div>
 
 <!-- DETAIL MODAL -->
@@ -371,29 +320,23 @@
       <span class="modal-rack" id="mRack" style="display:none"></span>
       <button class="btn-close" id="btnClose" aria-label="Close">✕</button>
     </div>
-
     <div class="modal-prices" id="mPrices"></div>
-
     <div id="mGeneralPairing">
       <div class="section-label">General Pairing</div>
       <div class="section-text" id="mGeneralPairingText"></div>
     </div>
-
     <div id="mHousePairing">
       <div class="section-label">House Pairing</div>
       <div class="section-text" id="mHousePairingText"></div>
     </div>
-
     <div id="mSommelier">
       <div class="section-label">Sommelier Notes</div>
       <div class="section-text" id="mSommelierText"></div>
     </div>
-
     <div id="mSnack">
       <div class="section-label">Snack Pairing</div>
       <div class="section-text" id="mSnackText"></div>
     </div>
-
     <div class="modal-images" id="mImages"></div>
   </div>
 </div>
@@ -406,134 +349,85 @@
   function $(id) { return document.getElementById(id); }
   function fmt$(v) { return v != null ? `$${Number(v).toFixed(2)}` : null; }
 
-  let allEntries = [];
-  let activeCategory = '';
+  let menuItems = [];
 
-  // ── Load data ──────────────────────────────────────────────────────────────
+  // ── Load menu items ────────────────────────────────────────────────────────
   async function init() {
-    const [racksRes, listRes] = await Promise.all([
-      fetch(`/api/${slug}/racks`),
-      fetch(`/api/${slug}/wine-list`)
-    ]);
-    const racks = await racksRes.json();
-    allEntries = await listRes.json();
-
-    const sel = $('rackSelect');
-    racks.forEach(r => {
-      const o = document.createElement('option');
-      o.value = r.id;
-      o.textContent = r.rack_number;
-      sel.appendChild(o);
-    });
-
-    renderFilterChips();
-    renderResults(allEntries);
+    const res = await fetch(`/api/${slug}/menu-items`);
+    menuItems = await res.json();
+    renderMenu();
   }
 
-  // ── Category filter chips ──────────────────────────────────────────────────
-  function renderFilterChips() {
-    const types = [...new Set(allEntries.map(e => e.beverage_type).filter(Boolean))].sort();
-    const container = $('filterChips');
+  // ── Render menu groups ─────────────────────────────────────────────────────
+  function renderMenu() {
+    const container = $('menuGroups');
+    if (!menuItems.length) {
+      container.innerHTML = '<div class="empty-state">No menu items set up yet.<br>Ask your manager to configure the menu in the admin panel.</div>';
+      return;
+    }
+
+    // Group by category
+    const groups = new Map();
+    menuItems.forEach(item => {
+      const key = item.category || '';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+
     container.innerHTML = '';
-
-    const allChip = document.createElement('button');
-    allChip.className = 'chip active';
-    allChip.textContent = 'All';
-    allChip.addEventListener('click', () => setCategory(''));
-    container.appendChild(allChip);
-
-    types.forEach(type => {
-      const chip = document.createElement('button');
-      chip.className = 'chip';
-      chip.textContent = type;
-      chip.dataset.type = type;
-      chip.addEventListener('click', () => setCategory(type));
-      container.appendChild(chip);
+    // Render named categories first, then uncategorized
+    const sortedKeys = [...groups.keys()].sort((a, b) => {
+      if (!a) return 1;
+      if (!b) return -1;
+      return a.localeCompare(b);
     });
-  }
 
-  function setCategory(type) {
-    activeCategory = type;
-    $('filterChips').querySelectorAll('.chip').forEach(c => {
-      c.classList.toggle('active', (c.dataset.type || '') === type);
-    });
-    applyFilters();
-  }
-
-  // ── Shared filter logic ────────────────────────────────────────────────────
-  function applyFilters() {
-    const rackId = $('rackSelect').value;
-    const q = $('beverageSearch').value.trim().toLowerCase();
-    let filtered = allEntries;
-    if (activeCategory) filtered = filtered.filter(e => e.beverage_type === activeCategory);
-    if (rackId) filtered = filtered.filter(e => String(e.rack_id) === rackId);
-    if (q) filtered = filtered.filter(e => e.beverage_name.toLowerCase().includes(q));
-    renderResults(filtered);
-  }
-
-  // ── Rack filter ────────────────────────────────────────────────────────────
-  $('rackSelect').addEventListener('change', () => {
-    $('beverageSearch').value = '';
-    $('beverageList').classList.remove('open');
-    applyFilters();
-  });
-
-  // ── Beverage search ────────────────────────────────────────────────────────
-  let debounce = null;
-  const beverageSearch = $('beverageSearch');
-  const beverageList = $('beverageList');
-
-  beverageSearch.addEventListener('input', () => {
-    clearTimeout(debounce);
-    $('rackSelect').value = '';
-    const q = beverageSearch.value.trim().toLowerCase();
-    if (!q) {
-      beverageList.classList.remove('open');
-      applyFilters();
-      return;
-    }
-    debounce = setTimeout(() => {
-      const matches = allEntries.filter(e => e.beverage_name.toLowerCase().includes(q));
-      renderCombo(matches);
-      applyFilters();
-    }, 150);
-  });
-
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.combo-wrap')) beverageList.classList.remove('open');
-  });
-
-  function renderCombo(items) {
-    beverageList.innerHTML = '';
-    if (!items.length) {
-      beverageList.innerHTML = '<div style="padding:0.6rem 0.85rem;color:var(--text-muted);font-size:0.85rem">No wines found</div>';
-      beverageList.classList.add('open');
-      return;
-    }
-    items.slice(0, 20).forEach(entry => {
-      const div = document.createElement('div');
-      div.className = 'combo-item';
-      div.innerHTML = `<span>${entry.beverage_name}</span><span class="ci-sub">${entry.beverage_type || ''} ${entry.rack_number ? '· Rack ' + entry.rack_number : ''}</span>`;
-      div.addEventListener('mousedown', e => {
-        e.preventDefault();
-        beverageList.classList.remove('open');
-        beverageSearch.value = entry.beverage_name;
-        applyFilters();
+    sortedKeys.forEach(key => {
+      const group = document.createElement('div');
+      group.className = 'category-group';
+      if (key) {
+        const heading = document.createElement('div');
+        heading.className = 'category-heading';
+        heading.textContent = key;
+        group.appendChild(heading);
+      }
+      groups.get(key).forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'menu-item';
+        el.innerHTML = `
+          <div class="mi-info">
+            <div class="mi-name">${item.name}</div>
+            ${item.description ? `<div class="mi-desc">${item.description}</div>` : ''}
+          </div>
+          <span class="mi-chevron">›</span>
+        `;
+        el.addEventListener('click', () => showPairings(item));
+        group.appendChild(el);
       });
-      beverageList.appendChild(div);
+      container.appendChild(group);
     });
-    beverageList.classList.add('open');
   }
 
-  // ── Results list ───────────────────────────────────────────────────────────
-  function renderResults(entries) {
-    const container = $('results');
-    if (!entries.length) {
-      container.innerHTML = '<div class="empty-state">No wines found.</div>';
+  // ── Show pairings for a menu item ──────────────────────────────────────────
+  async function showPairings(item) {
+    $('pairingsDishName').textContent = item.name;
+    $('pairingsList').innerHTML = '<div class="empty-state">Loading…</div>';
+    $('menuView').style.display = 'none';
+    $('pairingsView').style.display = 'block';
+
+    const res = await fetch(`/api/${slug}/menu-items/${item.id}/pairings`);
+    const pairings = await res.json();
+    renderPairings(pairings);
+  }
+
+  function renderPairings(pairings) {
+    const container = $('pairingsList');
+    if (!pairings.length) {
+      container.innerHTML = '<div class="empty-state">No pairings set up for this dish yet.</div>';
       return;
     }
     container.innerHTML = '';
-    entries.forEach(entry => {
+    pairings.forEach(entry => {
       const item = document.createElement('div');
       item.className = 'result-item';
       const btg = fmt$(entry.price_btg);
@@ -553,6 +447,12 @@
       container.appendChild(item);
     });
   }
+
+  // ── Back to menu ───────────────────────────────────────────────────────────
+  $('btnBack').addEventListener('click', () => {
+    $('pairingsView').style.display = 'none';
+    $('menuView').style.display = 'block';
+  });
 
   // ── Modal ──────────────────────────────────────────────────────────────────
   function mdToHtml(text) {
@@ -587,7 +487,6 @@
 
   function openModal(entry) {
     $('mTitle').textContent = entry.beverage_name;
-
     const rack = $('mRack');
     if (entry.rack_number) {
       rack.textContent = 'Rack ' + entry.rack_number;
@@ -596,29 +495,22 @@
       rack.style.display = 'none';
     }
 
-    // Prices
     const pricesEl = $('mPrices');
     pricesEl.innerHTML = '';
     const btg = fmt$(entry.price_btg);
     const btl = fmt$(entry.price_btl);
     if (btg) pricesEl.innerHTML += `<div class="price-chip"><div class="pc-label">By the Glass</div><div class="pc-val">${btg}</div></div>`;
     if (btl) pricesEl.innerHTML += `<div class="price-chip"><div class="pc-label">Per Bottle</div><div class="pc-val">${btl}</div></div>`;
-    if (!btg && !btl) pricesEl.innerHTML = '';
 
     setText('mGeneralPairingText', entry.general_pairing, 'No pairing notes available');
     setText('mHousePairingText', entry.house_pairing);
     setText('mSommelierText', entry.sommelier_comments);
     setText('mSnackText', entry.snack_notes);
 
-    // Images
     const imgEl = $('mImages');
     imgEl.innerHTML = '';
-    if (entry.label_image_path) {
-      imgEl.innerHTML += `<img class="modal-img" src="/${entry.label_image_path.replace(/\\/g,'/')}" alt="Label">`;
-    }
-    if (entry.bottle_image_path) {
-      imgEl.innerHTML += `<img class="modal-img" src="/${entry.bottle_image_path.replace(/\\/g,'/')}" alt="Bottle">`;
-    }
+    if (entry.label_image_path) imgEl.innerHTML += `<img class="modal-img" src="/${entry.label_image_path.replace(/\\/g,'/')}" alt="Label">`;
+    if (entry.bottle_image_path) imgEl.innerHTML += `<img class="modal-img" src="/${entry.bottle_image_path.replace(/\\/g,'/')}" alt="Bottle">`;
 
     $('modalOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -630,12 +522,8 @@
   }
 
   $('btnClose').addEventListener('click', closeModal);
-  $('modalOverlay').addEventListener('click', e => {
-    if (e.target === $('modalOverlay')) closeModal();
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
-  });
+  $('modalOverlay').addEventListener('click', e => { if (e.target === $('modalOverlay')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   init();
 </script>
