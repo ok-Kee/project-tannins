@@ -64,12 +64,24 @@ db.exec(`
   );
 `);
 
-// Add logo_image_path to restaurants for existing databases
-try {
-  db.exec('ALTER TABLE restaurants ADD COLUMN logo_image_path TEXT');
-} catch (e) {
-  if (!e.message.includes('duplicate column name')) throw e;
+// Add columns to restaurants for existing databases
+for (const col of [
+  'logo_image_path TEXT',
+  'theme_accent TEXT',
+  'theme_bg TEXT',
+]) {
+  try {
+    db.exec(`ALTER TABLE restaurants ADD COLUMN ${col}`);
+  } catch (e) {
+    if (!e.message.includes('duplicate column name')) throw e;
+  }
 }
+
+// Seed Tannins Bar theme colors
+db.prepare(`
+  UPDATE restaurants SET theme_accent = '#C9A84C', theme_bg = '#0A0A0A'
+  WHERE slug = 'tannins-bar' AND (theme_accent IS NULL OR theme_bg IS NULL)
+`).run();
 
 db.close();
 console.log(`Database initialized at ${dbPath}`);

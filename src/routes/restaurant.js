@@ -18,7 +18,7 @@ function getUploadDir(slug) {
 const IMAGE_TYPES = ['image/jpeg', 'image/png'];
 
 router.get('/', (req, res) => {
-  const row = db.prepare('SELECT name, logo_image_path FROM restaurants WHERE slug = ?').get(req.params.slug);
+  const row = db.prepare('SELECT name, logo_image_path, theme_accent, theme_bg FROM restaurants WHERE slug = ?').get(req.params.slug);
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json(row);
 });
@@ -47,12 +47,29 @@ router.put('/', basicAuth, (req, res) => {
     const restaurant = req.restaurant;
     if (!restaurant) return res.status(404).json({ error: 'Not found' });
 
+    const updates = [];
+    const params = [];
+
     if (req.file) {
-      const logoPath = path.join('uploads', slug, req.file.filename);
-      db.prepare('UPDATE restaurants SET logo_image_path = ? WHERE id = ?').run(logoPath, restaurant.id);
-      return res.json({ logo_image_path: logoPath });
+      updates.push('logo_image_path = ?');
+      params.push(path.join('uploads', slug, req.file.filename));
     }
-    res.json({ logo_image_path: restaurant.logo_image_path });
+    if (req.body.theme_accent !== undefined) {
+      updates.push('theme_accent = ?');
+      params.push(req.body.theme_accent || null);
+    }
+    if (req.body.theme_bg !== undefined) {
+      updates.push('theme_bg = ?');
+      params.push(req.body.theme_bg || null);
+    }
+
+    if (updates.length) {
+      params.push(restaurant.id);
+      db.prepare(`UPDATE restaurants SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+    }
+
+    const updated = db.prepare('SELECT logo_image_path, theme_accent, theme_bg FROM restaurants WHERE id = ?').get(restaurant.id);
+    res.json(updated);
   });
 });
 
