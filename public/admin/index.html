@@ -411,7 +411,7 @@
 
     /* ── LIST PANEL ── */
     .list-panel {
-      overflow-y: auto;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
@@ -449,7 +449,7 @@
       gap: 0.75rem;
       border-bottom: 1px solid var(--border);
       position: sticky;
-      top: 53px;
+      top: 0;
       background: var(--bg);
       z-index: 10;
     }
@@ -528,7 +528,8 @@
     #addRackRow { display: flex; }
 
     /* Menu list panel */
-    #menuListContent { display: none; flex-direction: column; flex: 1; }
+    #wineListContent { display: block; overflow-y: auto; flex: 1; }
+    #menuListContent { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
     .menu-list-header {
       padding: 0.75rem 1.25rem;
       border-bottom: 1px solid var(--border);
@@ -536,7 +537,7 @@
       align-items: center;
       gap: 0.75rem;
       position: sticky;
-      top: 53px;
+      top: 0;
       background: var(--bg);
       z-index: 10;
     }
