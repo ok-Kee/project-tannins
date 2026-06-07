@@ -1138,8 +1138,26 @@
 
   // ── Save wine entry ────────────────────────────────────────────────────────
   $('btnSave').addEventListener('click', async () => {
-    const bevId = $('beverageId').value;
-    if (!bevId) { showToast('Select a beverage first', true); return; }
+    let bevId = $('beverageId').value;
+    if (!bevId) {
+      const bevName = $('beverageInput').value.trim();
+      if (!bevName) { showToast('Enter a beverage name', true); return; }
+      const types = getSelectedTypes();
+      if (!types.length) { showToast('Select a type first', true); return; }
+      const createRes = await fetch('/api/beverages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: bevName, type: types[0] }),
+      });
+      const createData = await createRes.json();
+      if (createRes.ok || createRes.status === 409) {
+        bevId = String(createData.id);
+        $('beverageId').value = bevId;
+      } else {
+        showToast(createData.error || 'Failed to create beverage', true);
+        return;
+      }
+    }
     const fd = new FormData();
     fd.append('beverage_id', bevId);
     fd.append('rack_id', $('rackId').value);
