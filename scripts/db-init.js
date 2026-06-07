@@ -77,7 +77,7 @@ for (const col of [
   }
 }
 
-// Seed Tannins Bar theme colors
+// Seed default theme colors
 db.prepare(`
   UPDATE restaurants SET theme_accent = '#C9A84C', theme_bg = '#0A0A0A'
   WHERE slug = 'tannins-bar' AND (theme_accent IS NULL OR theme_bg IS NULL)
