@@ -1192,7 +1192,7 @@
       return;
     }
     const table = document.createElement('table');
-    table.innerHTML = `<thead><tr><th>Beverage</th><th>Type</th><th>Rack</th><th>BTG</th><th>BTL</th></tr></thead><tbody></tbody>`;
+    table.innerHTML = `<thead><tr><th>Beverage</th><th>Type</th><th>Rack</th><th>BTG</th><th>BTL</th><th></th></tr></thead><tbody></tbody>`;
     const tbody = table.querySelector('tbody');
     entries.forEach(entry => {
       const tr = document.createElement('tr');
@@ -1203,7 +1203,20 @@
         <td>${entry.rack_number ? `<span class="td-rack">${entry.rack_number}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
         <td class="td-price">${fmt$(entry.price_btg)}</td>
         <td class="td-price">${fmt$(entry.price_btl)}</td>
+        <td><button class="btn-sm danger btn-delete-wine">Delete</button></td>
       `;
+      tr.querySelector('.btn-delete-wine').addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!confirm(`Delete "${entry.beverage_name}" from the wine list?`)) return;
+        const res = await fetch(`/api/${slug}/wine-list/${entry.id}`, { method: 'DELETE' });
+        if (res.ok) {
+          if (editingId === entry.id) clearForm();
+          showToast('Entry deleted');
+          await loadList();
+        } else {
+          showToast('Delete failed', true);
+        }
+      });
       tr.addEventListener('click', () => {
         document.querySelectorAll('tbody tr.selected').forEach(r => r.classList.remove('selected'));
         tr.classList.add('selected');

@@ -87,6 +87,15 @@ router.post('/', (req, res) => {
   });
 });
 
+router.delete('/:id', (req, res) => {
+  const restaurantId = req.restaurant?.id || db.prepare('SELECT id FROM restaurants WHERE slug = ?').get(req.params.slug)?.id;
+  if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
+  const existing = db.prepare('SELECT id FROM wine_list WHERE id = ? AND restaurant_id = ?').get(req.params.id, restaurantId);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  db.prepare('DELETE FROM wine_list WHERE id = ?').run(req.params.id);
+  res.json({ id: Number(req.params.id) });
+});
+
 router.get('/:id/pairings', (req, res) => {
   const restaurantId = req.restaurant?.id || db.prepare('SELECT id FROM restaurants WHERE slug = ?').get(req.params.slug)?.id;
   if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
