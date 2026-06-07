@@ -77,6 +77,12 @@ for (const col of [
   }
 }
 
+// Rename tannins-bar slug to tannins-bar if still present
+db.prepare(`
+  UPDATE restaurants SET slug = 'tannins-bar', name = 'Tannins Bar'
+  WHERE slug = 'tannins-bar'
+`).run();
+
 // Seed default theme colors
 db.prepare(`
   UPDATE restaurants SET theme_accent = '#C9A84C', theme_bg = '#0A0A0A'
