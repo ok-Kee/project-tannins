@@ -87,6 +87,50 @@ router.post('/', (req, res) => {
   });
 });
 
+router.get('/:id/pairings', (req, res) => {
+  const restaurantId = req.restaurant?.id || db.prepare('SELECT id FROM restaurants WHERE slug = ?').get(req.params.slug)?.id;
+  if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
+  const wl = db.prepare('SELECT id FROM wine_list WHERE id = ? AND restaurant_id = ?').get(req.params.id, restaurantId);
+  if (!wl) return res.status(404).json({ error: 'Not found' });
+  const rows = db.prepare(`
+    SELECT mip.id AS pairing_id, mi.id AS menu_item_id, mi.name, mi.category, mi.description
+    FROM menu_item_pairings mip
+    JOIN menu_items mi ON mi.id = mip.menu_item_id
+    WHERE mip.wine_list_id = ?
+    ORDER BY mi.name ASC
+  `).all(req.params.id);
+  res.json(rows);
+});
+
+router.post('/:id/pairings', (req, res) => {
+  const restaurantId = req.restaurant?.id || db.prepare('SELECT id FROM restaurants WHERE slug = ?').get(req.params.slug)?.id;
+  if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
+  const wl = db.prepare('SELECT id FROM wine_list WHERE id = ? AND restaurant_id = ?').get(req.params.id, restaurantId);
+  if (!wl) return res.status(404).json({ error: 'Not found' });
+  const { menu_item_id } = req.body;
+  if (!menu_item_id) return res.status(400).json({ error: 'menu_item_id required' });
+  const mi = db.prepare('SELECT id FROM menu_items WHERE id = ? AND restaurant_id = ?').get(menu_item_id, restaurantId);
+  if (!mi) return res.status(404).json({ error: 'Menu item not found' });
+  try {
+    const result = db.prepare('INSERT INTO menu_item_pairings (menu_item_id, wine_list_id) VALUES (?, ?)').run(menu_item_id, req.params.id);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (e) {
+    if (e.message.includes('UNIQUE constraint failed')) return res.status(409).json({ error: 'Pairing already exists' });
+    throw e;
+  }
+});
+
+router.delete('/:id/pairings/:pairingId', (req, res) => {
+  const restaurantId = req.restaurant?.id || db.prepare('SELECT id FROM restaurants WHERE slug = ?').get(req.params.slug)?.id;
+  if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
+  const existing = db.prepare(
+    'SELECT mip.id FROM menu_item_pairings mip JOIN wine_list wl ON wl.id = mip.wine_list_id WHERE mip.id = ? AND mip.wine_list_id = ? AND wl.restaurant_id = ?'
+  ).get(req.params.pairingId, req.params.id, restaurantId);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  db.prepare('DELETE FROM menu_item_pairings WHERE id = ?').run(req.params.pairingId);
+  res.json({ id: Number(req.params.pairingId) });
+});
+
 router.put('/:id', (req, res) => {
   const slug = req.params.slug;
   const upload = multer({ storage: makeStorage(slug), fileFilter, limits: { fileSize: 10 * 1024 * 1024 } })

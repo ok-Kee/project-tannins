@@ -36,7 +36,7 @@ app.use('/api/:slug/racks', (req, res, next) => {
 
 // Wine list — GETs public, mutations auth-gated
 app.use('/api/:slug/wine-list', (req, res, next) => {
-  if (req.method === 'POST' || req.method === 'PUT') return basicAuth(req, res, next);
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') return basicAuth(req, res, next);
   next();
 }, wineListRouter);
 

@@ -329,6 +329,16 @@
       background: var(--surface2);
     }
 
+    .food-pairing-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem; }
+    .food-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      color: var(--text);
+    }
+
     @media (max-width: 640px) {
       .search-bar { grid-template-columns: 1fr; }
     }
@@ -394,6 +404,11 @@
     <div id="mSnack">
       <div class="section-label">Snack Pairing</div>
       <div class="section-text" id="mSnackText"></div>
+    </div>
+
+    <div id="mFoodPairings" style="display:none">
+      <div class="section-label">Pairs With</div>
+      <div id="mFoodPairingsList"></div>
     </div>
 
     <div class="modal-images" id="mImages"></div>
@@ -668,6 +683,19 @@
     if (entry.bottle_image_path) {
       imgEl.innerHTML += `<img class="modal-img" src="/${entry.bottle_image_path.replace(/\\/g,'/')}" alt="Bottle">`;
     }
+
+    // Food pairings
+    const fpSection = $('mFoodPairings');
+    const fpList = $('mFoodPairingsList');
+    fpSection.style.display = 'none';
+    fpList.innerHTML = '';
+    fetch(`/api/${slug}/wine-list/${entry.id}/pairings`)
+      .then(r => r.ok ? r.json() : [])
+      .then(pairings => {
+        if (!pairings.length) return;
+        fpList.innerHTML = `<div class="food-pairing-chips">${pairings.map(p => `<span class="food-chip">${p.name}</span>`).join('')}</div>`;
+        fpSection.style.display = '';
+      });
 
     $('modalOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';

@@ -665,6 +665,15 @@
         <textarea id="snackNotes" placeholder="Snack pairing suggestions…"></textarea>
       </div>
 
+      <div class="field" id="winePairingSection" style="display:none">
+        <label>Menu Pairings</label>
+        <div class="combo-wrap">
+          <input type="text" id="winePairingSearch" placeholder="Search menu items…" autocomplete="off">
+          <div class="combo-list" id="winePairingComboList"></div>
+        </div>
+        <div class="pairing-list" id="winePairingList"></div>
+      </div>
+
       <div class="row-2">
         <div class="field">
           <label>Price per Bottle ($)</label>
@@ -1082,6 +1091,9 @@
     $('labelPreview').classList.remove('show');
     $('bottlePreview').classList.remove('show');
     setSelectedTypes([]);
+    $('winePairingSection').style.display = 'none';
+    $('winePairingList').innerHTML = '';
+    $('winePairingSearch').value = '';
     updateModeBadge();
     document.querySelectorAll('tbody tr.selected').forEach(r => r.classList.remove('selected'));
   }
@@ -1108,6 +1120,10 @@
       $('bottlePreview').classList.add('show');
     } else { $('bottlePreview').classList.remove('show'); }
     updateModeBadge();
+    $('winePairingSection').style.display = '';
+    $('winePairingList').innerHTML = '';
+    $('winePairingSearch').value = '';
+    loadWinePairings(entry.id);
     $('beverageInput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -1399,9 +1415,86 @@
     pairingComboList.classList.add('open');
   }
 
+  // ── Wine-side menu pairings ────────────────────────────────────────────────
+  async function loadWinePairings(wineListId) {
+    const res = await fetch(`/api/${slug}/wine-list/${wineListId}/pairings`);
+    const pairings = await res.json();
+    renderWinePairingList(pairings, wineListId);
+  }
+
+  function renderWinePairingList(pairings, wineListId) {
+    const list = $('winePairingList');
+    if (!pairings.length) {
+      list.innerHTML = '<div style="padding:0.5rem 0;font-size:0.85rem;color:var(--text-muted)">No menu pairings yet.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    pairings.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'pairing-row';
+      row.innerHTML = `
+        <div class="pairing-row-info">
+          <div class="pairing-row-name">${p.name}</div>
+          <div class="pairing-row-type">${p.category || ''}</div>
+        </div>
+        <button class="btn-remove-pairing" data-pairing-id="${p.pairing_id}">Remove</button>
+      `;
+      row.querySelector('.btn-remove-pairing').addEventListener('click', async () => {
+        const r = await fetch(`/api/${slug}/wine-list/${wineListId}/pairings/${p.pairing_id}`, { method: 'DELETE' });
+        if (r.ok) loadWinePairings(wineListId);
+        else showToast('Remove failed', true);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  let winePairingSearchDebounce = null;
+  const winePairingSearchInput = $('winePairingSearch');
+  const winePairingComboList = $('winePairingComboList');
+
+  winePairingSearchInput.addEventListener('input', () => {
+    clearTimeout(winePairingSearchDebounce);
+    const q = winePairingSearchInput.value.trim().toLowerCase();
+    if (!q) { winePairingComboList.classList.remove('open'); return; }
+    winePairingSearchDebounce = setTimeout(() => {
+      const matches = menuItems.filter(m => m.name.toLowerCase().includes(q)).slice(0, 15);
+      if (!matches.length) {
+        winePairingComboList.innerHTML = '<div class="combo-empty">No menu items found</div>';
+        winePairingComboList.classList.add('open');
+        return;
+      }
+      winePairingComboList.innerHTML = '';
+      matches.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'combo-item';
+        div.innerHTML = `<span>${item.name}</span><span class="ci-sub">${item.category || ''}</span>`;
+        div.addEventListener('mousedown', async e => {
+          e.preventDefault();
+          winePairingComboList.classList.remove('open');
+          winePairingSearchInput.value = '';
+          if (!editingId) return;
+          const r = await fetch(`/api/${slug}/wine-list/${editingId}/pairings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ menu_item_id: item.id }),
+          });
+          if (r.ok) { loadWinePairings(editingId); showToast('Pairing added'); }
+          else if (r.status === 409) showToast('Already paired', true);
+          else showToast(`Failed to add pairing (${r.status})`, true);
+        });
+        winePairingComboList.appendChild(div);
+      });
+      winePairingComboList.classList.add('open');
+    }, 150);
+  });
+
+  winePairingSearchInput.addEventListener('blur', () => {
+    setTimeout(() => winePairingComboList.classList.remove('open'), 150);
+  });
+
   // ── Init ───────────────────────────────────────────────────────────────────
   (async () => {
-    await Promise.all([loadRacks(), loadList(), loadLogo()]);
+    await Promise.all([loadRacks(), loadList(), loadLogo(), loadMenuItems()]);
   })();
 </script>
 </body>
