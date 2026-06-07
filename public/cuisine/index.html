@@ -46,8 +46,8 @@
       padding: 2px 8px;
       color: var(--text-muted);
     }
+    .btn-nav-link:first-of-type { margin-left: auto; }
     .btn-nav-link {
-      margin-left: auto;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -291,9 +291,12 @@
 <body>
 
 <header>
-  <h1>Tannins — Cuisine</h1>
+  <a id="homeLink" href="#" style="text-decoration:none;color:inherit">
+    <h1>Tannins — Cuisine</h1>
+  </a>
   <span class="slug-badge" id="slugBadge"></span>
-  <a class="btn-nav-link" id="btnAdmin" href="#" target="_blank">Admin</a>
+  <a class="btn-nav-link" id="btnBeverages" href="#">Beverages</a>
+  <a class="btn-nav-link" id="btnAdmin" href="#">Admin</a>
 </header>
 
 <!-- MENU VIEW -->
@@ -383,6 +386,8 @@
 
   const slug = location.pathname.split('/')[1];
   document.getElementById('slugBadge').textContent = slug;
+  document.getElementById('homeLink').href = `/${slug}`;
+  document.getElementById('btnBeverages').href = `/${slug}/server`;
   document.getElementById('btnAdmin').href = `/${slug}/de`;
 
   function $(id) { return document.getElementById(id); }

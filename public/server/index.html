@@ -47,8 +47,8 @@
       padding: 2px 8px;
       color: var(--text-muted);
     }
+    .btn-nav-link:first-of-type { margin-left: auto; }
     .btn-nav-link {
-      margin-left: auto;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -347,10 +347,13 @@
 <body>
 
 <header>
-  <img class="header-logo" id="headerLogo" alt="Logo">
-  <h1>Tannins</h1>
+  <a id="homeLink" href="#" style="display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:inherit">
+    <img class="header-logo" id="headerLogo" alt="Logo">
+    <h1>Tannins</h1>
+  </a>
   <span class="slug-badge" id="slugBadge"></span>
-  <a class="btn-nav-link" id="btnAdmin" href="#" target="_blank">Admin</a>
+  <a class="btn-nav-link" id="btnCuisine" href="#">Cuisine</a>
+  <a class="btn-nav-link" id="btnAdmin" href="#">Admin</a>
 </header>
 
 <div class="filter-chips" id="filterChips"></div>
@@ -457,6 +460,8 @@
 
   const slug = location.pathname.split('/')[1];
   document.getElementById('slugBadge').textContent = slug;
+  document.getElementById('homeLink').href = `/${slug}`;
+  document.getElementById('btnCuisine').href = `/${slug}/cuisine`;
   document.getElementById('btnAdmin').href = `/${slug}/de`;
 
   function $(id) { return document.getElementById(id); }

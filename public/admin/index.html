@@ -57,8 +57,8 @@
     }
     header .mode-badge.new { background: var(--green); color: #fff; }
     header .mode-badge.edit { background: var(--accent); color: #fff; }
+    .btn-nav-link:first-of-type { margin-left: auto; }
     .btn-nav-link {
-      margin-left: auto;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -584,11 +584,13 @@
 <body>
 
 <header>
-  <img class="header-logo" id="headerLogo" alt="Logo">
-  <h1>Tannins Admin</h1>
+  <a id="homeLink" href="#" style="display:flex;align-items:center;gap:0.6rem;text-decoration:none;color:inherit">
+    <img class="header-logo" id="headerLogo" alt="Logo">
+    <h1>Tannins Admin</h1>
+  </a>
   <span class="slug-badge" id="slugBadge"></span>
   <span class="mode-badge new" id="modeBadge">New Entry</span>
-  <a class="btn-nav-link" id="btnServerView" href="#" target="_blank">Server View</a>
+  <a class="btn-nav-link" id="btnServerView" href="#">Server View</a>
 </header>
 
 <div class="layout">
@@ -843,6 +845,7 @@
   // ── Helpers ────────────────────────────────────────────────────────────────
   const slug = location.pathname.split('/')[1];
   document.getElementById('slugBadge').textContent = slug;
+  document.getElementById('homeLink').href = `/${slug}`;
   document.getElementById('btnServerView').href = `/${slug}/server`;
 
   function $(id) { return document.getElementById(id); }
