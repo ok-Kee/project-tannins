@@ -2,7 +2,10 @@ require('dotenv').config();
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = process.env.DB_PATH || './db/tannins.db';
+const defaultDbPath = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'tannins.db')
+  : './db/tannins.db';
+const dbPath = process.env.DB_PATH || defaultDbPath;
 const db = new Database(dbPath);
 
 db.pragma('journal_mode = WAL');
