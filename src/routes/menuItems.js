@@ -21,11 +21,11 @@ router.get('/', (req, res) => {
 router.post('/', basicAuth, (req, res) => {
   const restaurantId = req.restaurant?.id || getRestaurantId(req.params.slug);
   if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
-  const { name, description, category, sort_order } = req.body;
+  const { name, description, category, sort_order, price } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const result = db.prepare(
-    'INSERT INTO menu_items (restaurant_id, name, description, category, sort_order) VALUES (?, ?, ?, ?, ?)'
-  ).run(restaurantId, name, description || null, category || null, sort_order || 0);
+    'INSERT INTO menu_items (restaurant_id, name, description, category, sort_order, price) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(restaurantId, name, description || null, category || null, sort_order || 0, price != null ? price : null);
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
@@ -35,14 +35,15 @@ router.put('/:id', basicAuth, (req, res) => {
   if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
   const existing = db.prepare('SELECT * FROM menu_items WHERE id = ? AND restaurant_id = ?').get(req.params.id, restaurantId);
   if (!existing) return res.status(404).json({ error: 'Not found' });
-  const { name, description, category, sort_order } = req.body;
+  const { name, description, category, sort_order, price } = req.body;
   db.prepare(
-    'UPDATE menu_items SET name = ?, description = ?, category = ?, sort_order = ? WHERE id = ?'
+    'UPDATE menu_items SET name = ?, description = ?, category = ?, sort_order = ?, price = ? WHERE id = ?'
   ).run(
     name ?? existing.name,
     description !== undefined ? description : existing.description,
     category !== undefined ? category : existing.category,
     sort_order !== undefined ? sort_order : existing.sort_order,
+    price !== undefined ? price : existing.price,
     req.params.id
   );
   res.json({ id: Number(req.params.id) });

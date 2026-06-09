@@ -80,6 +80,13 @@ for (const col of [
   }
 }
 
+// Add price column to menu_items for existing databases
+try {
+  db.exec('ALTER TABLE menu_items ADD COLUMN price DECIMAL');
+} catch (e) {
+  if (!e.message.includes('duplicate column name')) throw e;
+}
+
 // Rename tannins-bar slug to tannins-bar if still present
 db.prepare(`
   UPDATE restaurants SET slug = 'tannins-bar', name = 'Tannins Bar'

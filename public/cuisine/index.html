@@ -94,6 +94,8 @@
     .mi-info { flex: 1; }
     .mi-name { font-weight: 500; font-size: 0.95rem; line-height: 1.3; }
     .mi-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+    .mi-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .mi-price { font-size: 0.88rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
     .mi-chevron { color: var(--text-muted); font-size: 0.9rem; }
 
     /* ── PAIRINGS VIEW ──────────────────────────────────────────────────────── */
@@ -448,7 +450,10 @@
             <div class="mi-name">${item.name}</div>
             ${item.description ? `<div class="mi-desc">${item.description}</div>` : ''}
           </div>
-          <span class="mi-chevron">›</span>
+          <div class="mi-right">
+            ${item.price != null ? `<span class="mi-price">${fmt$(item.price)}</span>` : ''}
+            <span class="mi-chevron">›</span>
+          </div>
         `;
         el.addEventListener('click', () => showPairings(item));
         group.appendChild(el);
