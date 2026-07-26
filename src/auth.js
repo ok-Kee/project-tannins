@@ -4,14 +4,14 @@ const db = require('./db');
 function basicAuth(req, res, next) {
   const authHeader = req.headers['authorization'] || '';
   if (!authHeader.startsWith('Basic ')) {
-    return res.set('WWW-Authenticate', 'Basic realm="Tannins Admin"').status(401).json({ error: 'Authentication required' });
+    return res.set('WWW-Authenticate', 'Basic realm="Easily Paired Admin"').status(401).json({ error: 'Authentication required' });
   }
 
   const slug = req.params.slug;
   const decoded = Buffer.from(authHeader.slice(6), 'base64').toString('utf8');
   const colonIdx = decoded.indexOf(':');
   if (colonIdx === -1) {
-    return res.set('WWW-Authenticate', 'Basic realm="Tannins Admin"').status(401).json({ error: 'Invalid credentials' });
+    return res.set('WWW-Authenticate', 'Basic realm="Easily Paired Admin"').status(401).json({ error: 'Invalid credentials' });
   }
 
   const username = decoded.slice(0, colonIdx);
