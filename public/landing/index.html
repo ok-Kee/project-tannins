@@ -3,13 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tannins</title>
+  <title>Easily Paired</title>
   <link rel="manifest" href="/public/manifest.json">
   <link rel="stylesheet" href="/public/landing/landing.css">
 </head>
 <body>
 
-<div class="card">
+<!-- ── Top: Easily Paired (our) brand — GLOBAL, identical for every tenant ──── -->
+<header class="brand-top">
+  <img class="brand-logo-img" src="/public/easily-paired-logo.jpg" alt="Easily Paired">
+</header>
+
+<!-- ── Middle: client / tenant brand — data-driven per slug ─────────────────── -->
+<main class="card">
   <div class="logo-wrap" id="logoWrap">
     <div class="logo-placeholder">
       <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -33,7 +39,10 @@
       Cuisine
     </a>
   </div>
-</div>
+</main>
+
+<!-- ── Bottom: copyright — GLOBAL ──────────────────────────────────────────── -->
+<footer class="copyright">© 2026 Pariz LLC</footer>
 
 <script type="module">
   import { hexToHsl, hslToHex, applyTheme } from '/public/theme.js';
@@ -49,7 +58,10 @@
       if (!res.ok) return;
       const data = await res.json();
       applyTheme(data.theme_accent, data.theme_bg);
-      if (data.name) document.getElementById('restaurantName').textContent = data.name;
+      if (data.name) {
+        document.getElementById('restaurantName').textContent = data.name;
+        document.title = data.name;
+      }
       if (data.logo_image_path) {
         const wrap = document.getElementById('logoWrap');
         wrap.innerHTML = `<img class="logo-img" src="/${data.logo_image_path.replace(/\\/g, '/')}" alt="${data.name} logo">`;
