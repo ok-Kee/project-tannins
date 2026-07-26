@@ -57,7 +57,7 @@ Schema is created by `npm run db:init` (idempotent — safe to re-run on an exis
 | Table | Purpose |
 |---|---|
 | `restaurants` | One row per tenant; holds slug, Basic Auth credentials, logo path, and theme colors |
-| `beverages` | Shared beverage catalog with AI-generated `general_pairing` text |
+| `beverages` | Shared beverage catalog with AI-generated `general_pairing` and `flavor_profile` text |
 | `wine_list` | Per-restaurant wine entries — links a beverage to a restaurant with pricing, images, and sommelier notes |
 | `racks` | Physical rack numbers for a restaurant |
 | `menu_items` | Dishes on the restaurant's menu |

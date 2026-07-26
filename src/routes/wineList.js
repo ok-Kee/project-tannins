@@ -39,7 +39,7 @@ router.get('/', (req, res) => {
 
   const rows = db.prepare(`
     SELECT wl.*, b.name AS beverage_name, b.type AS beverage_type, b.general_pairing,
-           r.rack_number
+           b.flavor_profile, r.rack_number
     FROM wine_list wl
     JOIN beverages b ON b.id = wl.beverage_id
     LEFT JOIN racks r ON r.id = wl.rack_id
@@ -53,7 +53,7 @@ router.get('/:id', (req, res) => {
   const restaurantId = req.restaurant?.id || db.prepare('SELECT id FROM restaurants WHERE slug = ?').get(req.params.slug)?.id;
   const row = db.prepare(`
     SELECT wl.*, b.name AS beverage_name, b.type AS beverage_type, b.general_pairing,
-           r.rack_number
+           b.flavor_profile, r.rack_number
     FROM wine_list wl
     JOIN beverages b ON b.id = wl.beverage_id
     LEFT JOIN racks r ON r.id = wl.rack_id
