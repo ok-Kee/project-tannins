@@ -7,6 +7,7 @@
     "start": "node src/app.js",
     "restart": "fuser -k 3000/tcp 2>/dev/null; node src/app.js",
     "db:init": "node scripts/db-init.js",
+    "create:tenant": "node scripts/create-tenant.js",
     "seed:import": "node scripts/seed-import.js",
     "seed:enrich": "node scripts/seed-enrich.js"
   },
