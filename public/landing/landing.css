@@ -144,3 +144,11 @@ body {
   font-size: 1.2rem;
   line-height: 1;
 }
+/* ── High-contrast accessibility mode (respects the toggle set on other pages) */
+:root[data-contrast="high"] {
+  --text-muted: var(--text) !important;
+}
+:root[data-contrast="high"] ::placeholder {
+  color: var(--text) !important;
+  opacity: 0.7 !important;
+}

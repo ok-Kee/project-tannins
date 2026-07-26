@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tannins Admin</title>
   <link rel="manifest" href="/public/manifest.json">
+  <script>try{if(localStorage.getItem('contrast')==='high')document.documentElement.setAttribute('data-contrast','high')}catch(e){}</script>
   <link rel="stylesheet" href="/public/admin/admin.css">
 </head>
 <body>
@@ -16,6 +17,7 @@
   </a>
   <span class="slug-badge" id="slugBadge"></span>
   <span class="mode-badge new" id="modeBadge">New Entry</span>
+  <button class="btn-nav-link btn-contrast" id="btnContrast" type="button" aria-pressed="false" title="Toggle high-contrast mode"><span aria-hidden="true">◐</span><span>High Contrast</span></button>
   <a class="btn-nav-link" id="btnServerView" href="#">Server View</a>
 </header>
 
@@ -243,10 +245,11 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-  import { hexToHsl, hslToHex, applyTheme } from '/public/theme.js';
+  import { hexToHsl, hslToHex, applyTheme, initContrastToggle } from '/public/theme.js';
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const slug = location.pathname.split('/')[1];
+  initContrastToggle('btnContrast');
   document.getElementById('slugBadge').textContent = slug;
   document.getElementById('homeLink').href = `/${slug}`;
   document.getElementById('btnServerView').href = `/${slug}/server`;

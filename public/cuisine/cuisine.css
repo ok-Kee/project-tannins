@@ -280,3 +280,21 @@ header .slug-badge {
   object-fit: contain;
   background: var(--surface2);
 }
+/* ── High-contrast accessibility mode ────────────────────────────────────────
+   Toggled by the header button (persisted in localStorage). Muted greys render
+   at full text colour; placeholders stay readable. !important is required
+   because theme.js sets --text-muted inline per restaurant, and an inline style
+   beats a normal stylesheet rule. */
+:root[data-contrast="high"] {
+  --text-muted: var(--text) !important;
+}
+:root[data-contrast="high"] ::placeholder {
+  color: var(--text) !important;
+  opacity: 0.7 !important;
+}
+.btn-contrast { gap: 6px; }
+.btn-contrast.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}

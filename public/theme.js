@@ -77,3 +77,28 @@ export function applyTheme(accent, bg) {
   root.style.setProperty('--text',         hslToHex(bgH, bgS * 0.15, isLight ? 10 : 92));
   root.style.setProperty('--text-muted',   hslToHex(accentH, accentS * 0.4, isLight ? 38 : 58));
 }
+
+// ── High-contrast accessibility mode ─────────────────────────────────────────
+// Flips a data-contrast="high" attribute on <html> (the CSS override lives in
+// each page's stylesheet) and remembers the choice per-device in localStorage.
+export function toggleContrast() {
+  const el = document.documentElement;
+  const on = el.getAttribute('data-contrast') === 'high';
+  if (on) el.removeAttribute('data-contrast');
+  else el.setAttribute('data-contrast', 'high');
+  try { localStorage.setItem('contrast', on ? 'normal' : 'high'); } catch (e) { /* ignore */ }
+  return !on;
+}
+
+// Wire a header toggle button: reflect the current state and flip on click.
+export function initContrastToggle(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const sync = () => {
+    const on = document.documentElement.getAttribute('data-contrast') === 'high';
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  };
+  sync();
+  btn.addEventListener('click', () => { toggleContrast(); sync(); });
+}
