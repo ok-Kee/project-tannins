@@ -57,14 +57,9 @@
       <div class="section-text" id="mFlavorText"></div>
     </div>
 
-    <div id="mGeneralPairing">
-      <div class="section-label">General Pairing</div>
-      <div class="section-text" id="mGeneralPairingText"></div>
-    </div>
-
-    <div id="mHousePairing">
-      <div class="section-label">House Pairing</div>
-      <div class="section-text" id="mHousePairingText"></div>
+    <div id="mPairing">
+      <div class="section-label">Pairing</div>
+      <div class="section-text" id="mPairingText"></div>
     </div>
 
     <div id="mSommelier">
@@ -307,8 +302,8 @@
 
     // Flavor profile: the restaurant's house override wins; otherwise the shared AI note
     setText('mFlavorText', entry.house_flavor_profile || entry.flavor_profile, 'No flavor notes available');
-    setText('mGeneralPairingText', entry.general_pairing, 'No pairing notes available');
-    setText('mHousePairingText', entry.house_pairing);
+    // Pairing: the restaurant's house override wins; otherwise the shared AI note
+    setText('mPairingText', entry.house_pairing || entry.general_pairing, 'No pairing notes available');
     setText('mSommelierText', entry.sommelier_comments);
     setText('mSnackText', entry.snack_notes);
 
