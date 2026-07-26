@@ -5,7 +5,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
   const q = `%${req.query.q || ''}%`;
   const rows = db.prepare(
-    'SELECT id, name, type, general_pairing FROM beverages WHERE name LIKE ? ORDER BY name LIMIT 50'
+    'SELECT id, name, type, general_pairing, flavor_profile FROM beverages WHERE name LIKE ? ORDER BY name LIMIT 50'
   ).all(q);
   res.json(rows);
 });

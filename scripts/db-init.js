@@ -41,6 +41,7 @@ db.exec(`
     beverage_id INTEGER NOT NULL REFERENCES beverages(id),
     sommelier_comments TEXT,
     house_pairing TEXT,
+    house_flavor_profile TEXT,
     snack_notes TEXT,
     price_btl DECIMAL,
     price_btg DECIMAL,
@@ -91,6 +92,14 @@ try {
 // Add flavor_profile column to beverages for existing databases
 try {
   db.exec('ALTER TABLE beverages ADD COLUMN flavor_profile TEXT');
+} catch (e) {
+  if (!e.message.includes('duplicate column name')) throw e;
+}
+
+// Add house_flavor_profile column to wine_list for existing databases
+// (per-restaurant override of the shared beverages.flavor_profile)
+try {
+  db.exec('ALTER TABLE wine_list ADD COLUMN house_flavor_profile TEXT');
 } catch (e) {
   if (!e.message.includes('duplicate column name')) throw e;
 }

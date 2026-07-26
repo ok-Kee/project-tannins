@@ -52,6 +52,11 @@
 
     <div class="modal-prices" id="mPrices"></div>
 
+    <div id="mFlavor">
+      <div class="section-label">Flavor Profile</div>
+      <div class="section-text" id="mFlavorText"></div>
+    </div>
+
     <div id="mGeneralPairing">
       <div class="section-label">General Pairing</div>
       <div class="section-text" id="mGeneralPairingText"></div>
@@ -300,6 +305,8 @@
     if (btl) pricesEl.innerHTML += `<div class="price-chip"><div class="pc-label">Per Bottle</div><div class="pc-val">${btl}</div></div>`;
     if (!btg && !btl) pricesEl.innerHTML = '';
 
+    // Flavor profile: the restaurant's house override wins; otherwise the shared AI note
+    setText('mFlavorText', entry.house_flavor_profile || entry.flavor_profile, 'No flavor notes available');
     setText('mGeneralPairingText', entry.general_pairing, 'No pairing notes available');
     setText('mHousePairingText', entry.house_pairing);
     setText('mSommelierText', entry.sommelier_comments);

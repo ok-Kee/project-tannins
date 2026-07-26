@@ -288,6 +288,32 @@ select:focus { border-color: var(--accent); }
 textarea { resize: vertical; min-height: 80px; }
 input[readonly], textarea[readonly] { opacity: 0.6; cursor: not-allowed; }
 
+/* rich-text (markdown) toolbar */
+.md-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: -1px;
+}
+.md-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0;
+  min-height: 26px;
+  height: 26px;
+  min-width: 30px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.md-btn:hover { color: var(--text); border-color: var(--accent); }
+.md-btn strong { font-weight: 800; }
+.md-hint { font-size: 0.68rem; color: var(--text-muted); margin-left: auto; opacity: 0.7; }
+
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
 /* combo box */

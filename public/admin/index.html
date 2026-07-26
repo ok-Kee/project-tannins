@@ -79,6 +79,16 @@
       </div>
 
       <div class="field">
+        <label>Flavor Profile <span style="font-size:0.7rem;color:var(--text-muted)">(auto-filled)</span></label>
+        <textarea id="flavorProfile" readonly placeholder="Select a beverage to auto-fill…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>House Flavor Profile</label>
+        <textarea id="houseFlavorProfile" placeholder="Leave blank to use the auto-filled flavor profile above — or write your own to override it here."></textarea>
+      </div>
+
+      <div class="field">
         <label>Sommelier Comments</label>
         <textarea id="sommelierComments" placeholder="Tasting notes, aromas, style…"></textarea>
       </div>
@@ -455,6 +465,7 @@
     beverageInput.value = bev.name;
     $('beverageId').value = bev.id;
     $('generalPairing').value = bev.general_pairing || '';
+    $('flavorProfile').value = bev.flavor_profile || '';
     if (!getSelectedTypes().length) setSelectedTypes([bev.type]);
     beverageList.classList.remove('open');
   }
@@ -477,6 +488,8 @@
     beverageInput.value = '';
     $('beverageId').value = '';
     $('generalPairing').value = '';
+    $('flavorProfile').value = '';
+    $('houseFlavorProfile').value = '';
     $('sommelierComments').value = '';
     $('housePairing').value = '';
     $('snackNotes').value = '';
@@ -500,6 +513,8 @@
     beverageInput.value = entry.beverage_name || '';
     $('beverageId').value = entry.beverage_id;
     $('generalPairing').value = entry.general_pairing || '';
+    $('flavorProfile').value = entry.flavor_profile || '';
+    $('houseFlavorProfile').value = entry.house_flavor_profile || '';
     $('sommelierComments').value = entry.sommelier_comments || '';
     $('housePairing').value = entry.house_pairing || '';
     $('snackNotes').value = entry.snack_notes || '';
@@ -557,6 +572,7 @@
     fd.append('rack_id', $('rackId').value);
     fd.append('sommelier_comments', $('sommelierComments').value);
     fd.append('house_pairing', $('housePairing').value);
+    fd.append('house_flavor_profile', $('houseFlavorProfile').value);
     fd.append('snack_notes', $('snackNotes').value);
     fd.append('price_btl', $('priceBtl').value);
     fd.append('price_btg', $('priceBtg').value);
@@ -953,6 +969,50 @@
   winePairingSearchInput.addEventListener('blur', () => {
     setTimeout(() => winePairingComboList.classList.remove('open'), 150);
   });
+
+  // ── Rich-text (markdown) toolbar ───────────────────────────────────────────
+  // The guest-facing pages render **bold** and "- " bullets via markdown, so the
+  // toolbar inserts that same syntax into the textarea rather than storing HTML.
+  function wrapSelection(ta, before, after, placeholder) {
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = ta.value.slice(s, e) || placeholder;
+    ta.value = ta.value.slice(0, s) + before + sel + after + ta.value.slice(e);
+    ta.focus();
+    ta.selectionStart = s + before.length;
+    ta.selectionEnd = s + before.length + sel.length;
+  }
+
+  function bulletSelection(ta) {
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const lineStart = ta.value.lastIndexOf('\n', s - 1) + 1;
+    let lineEnd = ta.value.indexOf('\n', e);
+    if (lineEnd === -1) lineEnd = ta.value.length;
+    const block = ta.value.slice(lineStart, lineEnd);
+    const newBlock = block.split('\n').map(l => l.startsWith('- ') ? l : '- ' + l).join('\n');
+    ta.value = ta.value.slice(0, lineStart) + newBlock + ta.value.slice(lineEnd);
+    ta.focus();
+    ta.selectionStart = lineStart;
+    ta.selectionEnd = lineStart + newBlock.length;
+  }
+
+  function attachMdToolbar(id) {
+    const ta = $(id);
+    if (!ta) return;
+    const bar = document.createElement('div');
+    bar.className = 'md-toolbar';
+    bar.innerHTML =
+      '<button type="button" class="md-btn" data-md="bold" title="Bold"><strong>B</strong></button>' +
+      '<button type="button" class="md-btn" data-md="bullet" title="Bullet list">• List</button>' +
+      '<span class="md-hint">**bold** · - bullets</span>';
+    ta.parentNode.insertBefore(bar, ta);
+    // Keep the textarea's focus/selection when a toolbar button is pressed.
+    bar.addEventListener('mousedown', e => e.preventDefault());
+    bar.querySelector('[data-md="bold"]').addEventListener('click', () => wrapSelection(ta, '**', '**', 'bold text'));
+    bar.querySelector('[data-md="bullet"]').addEventListener('click', () => bulletSelection(ta));
+  }
+
+  // Only the wine-note fields whose guest-facing display renders markdown.
+  ['sommelierComments', 'housePairing', 'houseFlavorProfile', 'snackNotes'].forEach(attachMdToolbar);
 
   // ── Init ───────────────────────────────────────────────────────────────────
   (async () => {
