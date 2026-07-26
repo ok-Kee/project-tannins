@@ -70,7 +70,8 @@ router.get('/:id/pairings', (req, res) => {
            wl.id AS wine_list_id, wl.price_btg, wl.price_btl,
            wl.sommelier_comments, wl.house_pairing, wl.snack_notes,
            wl.label_image_path, wl.bottle_image_path,
-           b.name AS beverage_name, b.type AS beverage_type, b.general_pairing,
+           COALESCE(wl.house_name, b.name) AS beverage_name,
+           COALESCE(wl.house_type, b.type) AS beverage_type, b.general_pairing,
            r.rack_number
     FROM menu_item_pairings mip
     JOIN wine_list wl ON wl.id = mip.wine_list_id

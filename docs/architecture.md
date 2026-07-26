@@ -14,8 +14,10 @@
 A **tenant is a row in `restaurants`**, keyed by a URL `slug`. Everything is scoped by slug:
 
 - **Routing** (`src/app.js`): `/:slug` (landing), `/:slug/server`, `/:slug/cuisine`,
-  `/:slug/de` (admin). API routes are `/api/:slug/...`; `/api/beverages` is the one
-  cross-tenant route (the shared catalog). The frontend reads the slug from
+  `/:slug/de` (admin). API routes are `/api/:slug/...`. `/api/:slug/beverages` is the
+  cross-tenant route (the shared catalog): its `GET` search is public and its `POST` (add to
+  catalog) is Basic-Auth-gated like other mutations — the slug identifies the authenticated
+  actor, but the beverage row itself is still global. The frontend reads the slug from
   `location.pathname.split('/')[1]`.
 - **Per-tenant auth** (`src/auth.js`): `basicAuth` looks up the restaurant by slug and
   bcrypt-compares against *that restaurant's* `http_pass_hash`. Each tenant has its own

@@ -42,6 +42,8 @@ db.exec(`
     sommelier_comments TEXT,
     house_pairing TEXT,
     house_flavor_profile TEXT,
+    house_name TEXT,
+    house_type TEXT,
     snack_notes TEXT,
     price_btl DECIMAL,
     price_btg DECIMAL,
@@ -102,6 +104,16 @@ try {
   db.exec('ALTER TABLE wine_list ADD COLUMN house_flavor_profile TEXT');
 } catch (e) {
   if (!e.message.includes('duplicate column name')) throw e;
+}
+
+// Add house_name / house_type columns to wine_list for existing databases
+// (per-restaurant override of the shared beverages.name / beverages.type)
+for (const col of ['house_name TEXT', 'house_type TEXT']) {
+  try {
+    db.exec(`ALTER TABLE wine_list ADD COLUMN ${col}`);
+  } catch (e) {
+    if (!e.message.includes('duplicate column name')) throw e;
+  }
 }
 
 // Rename tannins-bar slug to tannins-bar if still present

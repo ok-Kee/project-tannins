@@ -289,6 +289,11 @@
   let allEntries = [];
   let sortState = { col: null, dir: 'asc' };
   let selectedBeverage = null;
+  // Canonical (global catalog) name/type of the linked beverage, used in edit mode to
+  // decide whether the Name/Type fields differ from the catalog and should be stored as
+  // a per-restaurant override (house_name/house_type) rather than mutating the catalog.
+  let catalogNameBaseline = '';
+  let catalogTypeBaseline = '';
   let allWineListEntries = [];
 
   // ── Logo & Theme ──────────────────────────────────────────────────────────
@@ -441,7 +446,7 @@
   });
 
   async function searchBeverages(q) {
-    const res = await fetch(`/api/beverages?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`/api/${slug}/beverages?q=${encodeURIComponent(q)}`);
     const items = await res.json();
     renderBeverageList(items);
   }
@@ -470,6 +475,10 @@
     $('generalPairing').value = bev.general_pairing || '';
     $('flavorProfile').value = bev.flavor_profile || '';
     if (!getSelectedTypes().length) setSelectedTypes([bev.type]);
+    // Relinking to a catalog beverage resets the override baseline to that beverage's
+    // canonical name/type, so picking a suggestion clears any prior override on save.
+    catalogNameBaseline = bev.name;
+    catalogTypeBaseline = bev.type;
     beverageList.classList.remove('open');
   }
 
@@ -504,6 +513,8 @@
     $('labelPreview').classList.remove('show');
     $('bottlePreview').classList.remove('show');
     setSelectedTypes([]);
+    catalogNameBaseline = '';
+    catalogTypeBaseline = '';
     $('winePairingSection').style.display = 'none';
     $('winePairingList').innerHTML = '';
     $('winePairingSearch').value = '';
@@ -526,6 +537,10 @@
     $('rackId').value = entry.rack_id || '';
     const types = entry.beverage_type ? [entry.beverage_type] : [];
     setSelectedTypes(types);
+    // Name/Type fields show the resolved value (house override || catalog). Stash the
+    // canonical catalog value so Save can tell whether the field was customized.
+    catalogNameBaseline = entry.catalog_name || '';
+    catalogTypeBaseline = entry.catalog_type || '';
     if (entry.label_image_path) {
       $('labelPreview').src = '/' + entry.label_image_path.replace(/\\/g, '/');
       $('labelPreview').classList.add('show');
@@ -556,7 +571,7 @@
       if (!bevName) { showToast('Enter a beverage name', true); return; }
       const types = getSelectedTypes();
       if (!types.length) { showToast('Select a type first', true); return; }
-      const createRes = await fetch('/api/beverages', {
+      const createRes = await fetch(`/api/${slug}/beverages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: bevName, type: types[0] }),
@@ -565,17 +580,30 @@
       if (createRes.ok || createRes.status === 409) {
         bevId = String(createData.id);
         $('beverageId').value = bevId;
+        // A freshly added catalog beverage matches the typed name/type — set the
+        // baseline so the override computation below sees no difference.
+        catalogNameBaseline = bevName;
+        catalogTypeBaseline = types[0];
       } else {
         showToast(createData.error || 'Failed to create beverage', true);
         return;
       }
     }
+    // House name/type overrides: store only when the field differs from the linked
+    // catalog beverage, so a restaurant can rename its copy without touching the
+    // shared catalog. Empty string clears any existing override on the server.
+    const typedName = $('beverageInput').value.trim();
+    const selectedType = getSelectedTypes()[0] || '';
+    const houseName = (typedName && typedName !== catalogNameBaseline) ? typedName : '';
+    const houseType = (selectedType && selectedType !== catalogTypeBaseline) ? selectedType : '';
     const fd = new FormData();
     fd.append('beverage_id', bevId);
     fd.append('rack_id', $('rackId').value);
     fd.append('sommelier_comments', $('sommelierComments').value);
     fd.append('house_pairing', $('housePairing').value);
     fd.append('house_flavor_profile', $('houseFlavorProfile').value);
+    fd.append('house_name', houseName);
+    fd.append('house_type', houseType);
     fd.append('snack_notes', $('snackNotes').value);
     fd.append('price_btl', $('priceBtl').value);
     fd.append('price_btg', $('priceBtg').value);

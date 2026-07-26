@@ -1,7 +1,7 @@
 # Project Tannins — Easily Paired
 
 Multi-tenant wine-pairing PWA for restaurant servers. Product brand: **Easily Paired**;
-company: **Pariz LLC**. Node/Express + SQLite (`better-sqlite3`, WAL), vanilla-JS
+company: **Pairz LLC**. Node/Express + SQLite (`better-sqlite3`, WAL), vanilla-JS
 frontend with **no build step**, deployed to Render.
 
 ## Where the docs live

@@ -58,7 +58,7 @@ Schema is created by `npm run db:init` (idempotent — safe to re-run on an exis
 |---|---|
 | `restaurants` | One row per tenant; holds slug, Basic Auth credentials, logo path, and theme colors |
 | `beverages` | Shared beverage catalog with AI-generated `general_pairing` and `flavor_profile` text |
-| `wine_list` | Per-restaurant wine entries — links a beverage to a restaurant with pricing, images, and sommelier notes |
+| `wine_list` | Per-restaurant wine entries — links a beverage to a restaurant with pricing, images, sommelier notes, and per-restaurant overrides (`house_name`, `house_type`, `house_pairing`, `house_flavor_profile`) |
 | `racks` | Physical rack numbers for a restaurant |
 | `menu_items` | Dishes on the restaurant's menu |
 | `menu_item_pairings` | Many-to-many join between menu items and wine list entries |
@@ -83,8 +83,8 @@ All routes are prefixed with the restaurant slug where multi-tenant.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/beverages` | Public | Search beverages by name |
-| `POST` | `/api/beverages` | — | Create a beverage |
+| `GET` | `/api/:slug/beverages` | Public | Search the shared beverage catalog by name |
+| `POST` | `/api/:slug/beverages` | Admin | Add a beverage to the shared catalog |
 | `GET` | `/api/:slug/restaurant` | Public | Get restaurant info |
 | `PUT` | `/api/:slug/restaurant` | Admin | Update restaurant info / upload logo |
 | `GET` | `/api/:slug/racks` | Public | List racks |

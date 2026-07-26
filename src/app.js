@@ -22,8 +22,12 @@ app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // ── API routes ─────────────────────────────────────────────────────────────
 
-// Beverages — fully public
-app.use('/api/beverages', beveragesRouter);
+// Beverages — global shared catalog; GET (search) public, POST auth-gated so only
+// an authenticated tenant can add to the catalog (the slug identifies the actor).
+app.use('/api/:slug/beverages', (req, res, next) => {
+  if (req.method === 'POST') return basicAuth(req, res, next);
+  next();
+}, beveragesRouter);
 
 // Restaurant — GET public, PUT auth-gated
 app.use('/api/:slug/restaurant', restaurantRouter);
