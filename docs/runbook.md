@@ -90,6 +90,7 @@ passes) — expected interim state.
   the SELECT.
 
 ## Current state
-- Tenants: `tannins-bar` (original), `mountain-prime` (first client, live; wine/menu data load
-  pending).
+- Tenants: `tannins-bar` (original), `mountain-prime` (first client; Phase 1 data load **done**
+  — 86 wines, 35 menu items, 47 non-wine beverages loaded to prod `/data`. Display name on prod
+  is "Mountain Prime Steakhouse & Lounge"). Phase 2 (AI flavor/pairing passes) deferred.
 - Product brand **Easily Paired**, company **Pariz LLC**.
