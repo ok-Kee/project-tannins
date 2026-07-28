@@ -9,6 +9,9 @@
     "db:init": "node scripts/db-init.js",
     "create:tenant": "node scripts/create-tenant.js",
     "seed:import": "node scripts/seed-import.js",
+    "seed:import:mps": "node scripts/seed-import-mps.js",
+    "seed:menu": "node scripts/seed-menu.js",
+    "seed:beverages": "node scripts/seed-beverages-csv.js",
     "seed:enrich": "node scripts/seed-enrich.js",
     "seed:flavor": "node scripts/seed-flavor.js"
   },
