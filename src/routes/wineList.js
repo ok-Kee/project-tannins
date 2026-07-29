@@ -106,13 +106,29 @@ router.get('/:id/pairings', (req, res) => {
   const wl = db.prepare('SELECT id FROM wine_list WHERE id = ? AND restaurant_id = ?').get(req.params.id, restaurantId);
   if (!wl) return res.status(404).json({ error: 'Not found' });
   const rows = db.prepare(`
-    SELECT mip.id AS pairing_id, mi.id AS menu_item_id, mi.name, mi.category, mi.description
+    SELECT mip.id AS pairing_id, mip.sort_order,
+           mip.ai_pairing_text, mip.house_pairing_text,
+           mi.id AS menu_item_id, mi.name, mi.category, mi.description
     FROM menu_item_pairings mip
     JOIN menu_items mi ON mi.id = mip.menu_item_id
     WHERE mip.wine_list_id = ?
-    ORDER BY mi.name ASC
+    ORDER BY mip.sort_order ASC, mi.name ASC
   `).all(req.params.id);
   res.json(rows);
+});
+
+// PATCH /:id/pairings/:pairingId — edit the restaurant's per-entry pairing note
+router.patch('/:id/pairings/:pairingId', (req, res) => {
+  const restaurantId = req.restaurant?.id || db.prepare('SELECT id FROM restaurants WHERE slug = ?').get(req.params.slug)?.id;
+  if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
+  const existing = db.prepare(
+    'SELECT mip.id FROM menu_item_pairings mip JOIN wine_list wl ON wl.id = mip.wine_list_id WHERE mip.id = ? AND mip.wine_list_id = ? AND wl.restaurant_id = ?'
+  ).get(req.params.pairingId, req.params.id, restaurantId);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  const { house_pairing_text } = req.body;
+  const value = house_pairing_text && house_pairing_text.trim() ? house_pairing_text : null;
+  db.prepare('UPDATE menu_item_pairings SET house_pairing_text = ? WHERE id = ?').run(value, req.params.pairingId);
+  res.json({ id: Number(req.params.pairingId), house_pairing_text: value });
 });
 
 router.post('/:id/pairings', (req, res) => {

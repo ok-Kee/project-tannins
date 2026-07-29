@@ -59,9 +59,9 @@
       <div class="section-text" id="mFlavorText"></div>
     </div>
 
-    <div id="mPairing">
+    <div id="mPairing" style="display:none">
       <div class="section-label">Pairing</div>
-      <div class="section-text" id="mPairingText"></div>
+      <div id="mPairingList"></div>
     </div>
 
     <div id="mSommelier">
@@ -283,6 +283,10 @@
     }
   }
 
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
   function openModal(entry) {
     $('mTitle').textContent = entry.beverage_name;
 
@@ -305,8 +309,6 @@
 
     // Flavor profile: the restaurant's house override wins; otherwise the shared AI note
     setText('mFlavorText', entry.house_flavor_profile || entry.flavor_profile, 'No flavor notes available');
-    // Pairing: the restaurant's house override wins; otherwise the shared AI note
-    setText('mPairingText', entry.house_pairing || entry.general_pairing, 'No pairing notes available');
     setText('mSommelierText', entry.sommelier_comments);
     setText('mSnackText', entry.snack_notes);
 
@@ -320,17 +322,30 @@
       imgEl.innerHTML += `<img class="modal-img" src="/${entry.bottle_image_path.replace(/\\/g,'/')}" alt="Bottle">`;
     }
 
-    // Food pairings
+    // Menu pairings: real dish pairings for this beverage. "Pairs With" is the quick
+    // chip scan; "Pairing" lists each dish with its note (house override wins over AI).
     const fpSection = $('mFoodPairings');
     const fpList = $('mFoodPairingsList');
+    const pairSection = $('mPairing');
+    const pairList = $('mPairingList');
     fpSection.style.display = 'none';
     fpList.innerHTML = '';
+    pairSection.style.display = 'none';
+    pairList.innerHTML = '';
     fetch(`/api/${slug}/wine-list/${entry.id}/pairings`)
       .then(r => r.ok ? r.json() : [])
       .then(pairings => {
         if (!pairings.length) return;
-        fpList.innerHTML = `<div class="food-pairing-chips">${pairings.map(p => `<span class="food-chip">${p.name}</span>`).join('')}</div>`;
+        fpList.innerHTML = `<div class="food-pairing-chips">${pairings.map(p => `<span class="food-chip">${escHtml(p.name)}</span>`).join('')}</div>`;
         fpSection.style.display = '';
+        const withNotes = pairings.filter(p => (p.house_pairing_text || p.ai_pairing_text || '').trim());
+        if (withNotes.length) {
+          pairList.innerHTML = withNotes.map(p =>
+            `<div class="pairing-note"><div class="pairing-note-dish">${escHtml(p.name)}</div>` +
+            `<div class="section-text">${mdToHtml(p.house_pairing_text || p.ai_pairing_text)}</div></div>`
+          ).join('');
+          pairSection.style.display = '';
+        }
       });
 
     $('modalOverlay').classList.add('open');

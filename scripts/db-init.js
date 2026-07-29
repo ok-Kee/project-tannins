@@ -66,6 +66,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     menu_item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
     wine_list_id INTEGER NOT NULL REFERENCES wine_list(id) ON DELETE CASCADE,
+    ai_pairing_text TEXT,
+    house_pairing_text TEXT,
     sort_order INTEGER DEFAULT 0,
     UNIQUE(menu_item_id, wine_list_id)
   );
@@ -111,6 +113,17 @@ try {
 for (const col of ['house_name TEXT', 'house_type TEXT']) {
   try {
     db.exec(`ALTER TABLE wine_list ADD COLUMN ${col}`);
+  } catch (e) {
+    if (!e.message.includes('duplicate column name')) throw e;
+  }
+}
+
+// Add per-pairing text columns to menu_item_pairings for existing databases.
+// ai_pairing_text = LLM-generated "why this beverage pairs with this dish";
+// house_pairing_text = the restaurant's per-entry override. Display = house || ai.
+for (const col of ['ai_pairing_text TEXT', 'house_pairing_text TEXT']) {
+  try {
+    db.exec(`ALTER TABLE menu_item_pairings ADD COLUMN ${col}`);
   } catch (e) {
     if (!e.message.includes('duplicate column name')) throw e;
   }

@@ -241,8 +241,8 @@
 
     // Flavor profile: the restaurant's house override wins; otherwise the shared AI note
     setText('mFlavorText', entry.house_flavor_profile || entry.flavor_profile, 'No flavor notes available');
-    // Pairing: the restaurant's house override wins; otherwise the shared AI note
-    setText('mPairingText', entry.house_pairing || entry.general_pairing, 'No pairing notes available');
+    // Pairing: the note for THIS dish + beverage (house override wins over the AI note)
+    setText('mPairingText', entry.house_pairing_text || entry.ai_pairing_text, 'No pairing notes available');
     setText('mSommelierText', entry.sommelier_comments);
     setText('mSnackText', entry.snack_notes);
 

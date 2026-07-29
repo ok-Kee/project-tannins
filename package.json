@@ -12,8 +12,8 @@
     "seed:import:mps": "node scripts/seed-import-mps.js",
     "seed:menu": "node scripts/seed-menu.js",
     "seed:beverages": "node scripts/seed-beverages-csv.js",
-    "seed:enrich": "node scripts/seed-enrich.js",
-    "seed:flavor": "node scripts/seed-flavor.js"
+    "seed:flavor": "node scripts/seed-flavor.js",
+    "seed:pairings": "node scripts/seed-pairings.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

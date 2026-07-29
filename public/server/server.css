@@ -321,6 +321,15 @@ input[type="text"]:focus, select:focus { border-color: var(--accent); }
   background: var(--surface2);
 }
 
+.pairing-note { margin-bottom: 0.7rem; }
+.pairing-note:last-child { margin-bottom: 0; }
+.pairing-note-dish {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+}
+
 .food-pairing-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem; }
 .food-chip {
   background: var(--surface2);

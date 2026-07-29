@@ -33,8 +33,12 @@ Scripts (`npm run <name>`):
 | `seed:import:mps` | import Mountain Prime wines (thin variant of `seed:import`) | **`DB_PATH` only** |
 | `seed:menu` | import food menu from a `[Category,Item,Description,Size,Price]` CSV | honors `DATA_DIR` |
 | `seed:beverages` | import non-wine beverages from a `[name,type,price]` CSV | honors `DATA_DIR` |
-| `seed:enrich` | AI-fill `beverages.general_pairing` where null | **`DB_PATH` only** |
 | `seed:flavor` | AI-fill `beverages.flavor_profile` where null | honors `DATA_DIR` |
+| `seed:pairings` | AI-fill `menu_item_pairings` (per-tenant menu pairings + per-pairing note) | honors `DATA_DIR` |
+
+> `seed:enrich` (AI-fill `beverages.general_pairing`) is **retired** — generic per-beverage
+> pairing copy is superseded by real menu pairings (`seed:pairings`). The script file
+> remains but is no longer wired to an npm task and should not be run.
 
 All three MP importers are **insert-only + idempotent** (skip a wine/dish already present for
 that tenant) and scoped to a single tenant slug, so re-running is safe and applying them to
@@ -43,8 +47,8 @@ prod is **additive** — it creates only the Mountain Prime tenant and never tou
 
 - Run AI seeds **after** a data load so one pass covers all wines. Both AI seeds are
   incremental (skip already-filled rows) and safe to re-run.
-- ⚠️ **`seed-import.js` / `seed-enrich.js` ignore `DATA_DIR`.** On Render, run them as
-  `DB_PATH=/data/tannins.db npm run seed:import` or they write to an ephemeral
+- ⚠️ **`seed-import.js` / `seed-import-mps.js` ignore `DATA_DIR`.** On Render, run them as
+  `DB_PATH=/data/tannins.db npm run seed:import:mps` or they write to an ephemeral
   `./db/tannins.db`. `seed-import.js` (and its MP variant `seed-import-mps.js`) are hardcoded
   to a spreadsheet shape (slug, sheet name, section parsing). `seed-menu.js` /
   `seed-beverages-csv.js` honor `DATA_DIR`, but on Render still pass `DB_PATH=/data/tannins.db`
@@ -77,8 +81,38 @@ DB_PATH=/data/tannins.db npm run seed:menu
 DB_PATH=/data/tannins.db npm run seed:beverages
 ```
 Then smoke-test `/mountain-prime/server` + `/mountain-prime/cuisine` and confirm `tannins-bar`
-is unchanged. Pairings / flavor profiles / general-pairing copy stay empty until Phase 2 (AI
-passes) — expected interim state.
+is unchanged. Pairings / flavor profiles stay empty until Phase 2 (AI passes) — expected
+interim state.
+
+## Mountain Prime AI passes (Phase 2)
+Two idempotent AI passes, run after the Phase 1 load. Both fill only empty rows, so re-runs
+are safe. Requires `ANTHROPIC_API_KEY`.
+
+- **`seed:flavor`** — fills `beverages.flavor_profile` (shared catalog; one pass covers all).
+- **`seed:pairings`** — beverage-centric menu pairings. For each eligible beverage on the
+  tenant's list (all types **except `N/A`** — sodas/juices/N-A drinks are skipped) the model
+  picks its best 2–4 dishes and writes a per-pairing note into
+  `menu_item_pairings.ai_pairing_text`. Scoped to `RESTAURANT_SLUG` (default `mountain-prime`);
+  skips any beverage that already has pairings. Restaurants curate the wording per entry via
+  `house_pairing_text` in admin (display = `house_pairing_text || ai_pairing_text`).
+
+Local (Node 22):
+```bash
+npm run seed:flavor
+npm run seed:pairings          # RESTAURANT_SLUG=mountain-prime by default
+```
+
+Prod (Render shell), **additive** — back up first; scoped to the tenant, never touches
+`tannins-bar`. `db-init` on the next boot adds the `ai_pairing_text`/`house_pairing_text`
+columns automatically:
+```bash
+cp /data/tannins.db /data/tannins.db.bak.$(date +%s)
+DB_PATH=/data/tannins.db npm run seed:flavor
+DB_PATH=/data/tannins.db npm run seed:pairings
+```
+Prod generation is a fresh run (LLM output differs from local); the local pass validates the
+prompt + UI quality, and MP finalizes wording in admin. `seed:enrich` / `general_pairing` are
+retired — do not run enrich.
 
 ## Known gotchas
 - **Local `better-sqlite3` won't build on Node 26** (V8 API removed). Use Node 22 LTS locally;
@@ -92,5 +126,7 @@ passes) — expected interim state.
 ## Current state
 - Tenants: `tannins-bar` (original), `mountain-prime` (first client; Phase 1 data load **done**
   — 86 wines, 35 menu items, 47 non-wine beverages loaded to prod `/data`. Display name on prod
-  is "Mountain Prime Steakhouse & Lounge"). Phase 2 (AI flavor/pairing passes) deferred.
+  is "Mountain Prime Steakhouse & Lounge"). Phase 2 AI passes (`seed:flavor` +
+  `seed:pairings`) built + run locally; menu pairings carry per-pairing notes editable in
+  admin. Prod run pending.
 - Product brand **Easily Paired**, company **Pariz LLC**.

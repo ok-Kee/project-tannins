@@ -67,11 +67,13 @@ router.get('/:id/pairings', (req, res) => {
   if (!item) return res.status(404).json({ error: 'Menu item not found' });
   const rows = db.prepare(`
     SELECT mip.id AS pairing_id, mip.sort_order,
+           mip.ai_pairing_text, mip.house_pairing_text,
            wl.id AS wine_list_id, wl.price_btg, wl.price_btl,
-           wl.sommelier_comments, wl.house_pairing, wl.snack_notes,
+           wl.sommelier_comments, wl.snack_notes,
+           wl.house_flavor_profile, b.flavor_profile,
            wl.label_image_path, wl.bottle_image_path,
            COALESCE(wl.house_name, b.name) AS beverage_name,
-           COALESCE(wl.house_type, b.type) AS beverage_type, b.general_pairing,
+           COALESCE(wl.house_type, b.type) AS beverage_type,
            r.rack_number
     FROM menu_item_pairings mip
     JOIN wine_list wl ON wl.id = mip.wine_list_id
@@ -103,6 +105,22 @@ router.post('/:id/pairings', basicAuth, (req, res) => {
     if (e.message.includes('UNIQUE constraint failed')) return res.status(409).json({ error: 'Pairing already exists' });
     throw e;
   }
+});
+
+// PATCH /:id/pairings/:pairingId — edit the restaurant's per-entry pairing note
+router.patch('/:id/pairings/:pairingId', basicAuth, (req, res) => {
+  const restaurantId = req.restaurant?.id || getRestaurantId(req.params.slug);
+  if (!restaurantId) return res.status(404).json({ error: 'Restaurant not found' });
+  const existing = db.prepare(
+    `SELECT mip.id FROM menu_item_pairings mip
+     JOIN menu_items mi ON mi.id = mip.menu_item_id
+     WHERE mip.id = ? AND mip.menu_item_id = ? AND mi.restaurant_id = ?`
+  ).get(req.params.pairingId, req.params.id, restaurantId);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  const { house_pairing_text } = req.body;
+  const value = house_pairing_text && house_pairing_text.trim() ? house_pairing_text : null;
+  db.prepare('UPDATE menu_item_pairings SET house_pairing_text = ? WHERE id = ?').run(value, req.params.pairingId);
+  res.json({ id: Number(req.params.pairingId), house_pairing_text: value });
 });
 
 // DELETE /:id/pairings/:pairingId — remove a pairing

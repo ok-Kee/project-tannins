@@ -76,16 +76,6 @@
       </div>
 
       <div class="field">
-        <label>General Pairing <span style="font-size:0.7rem;color:var(--text-muted)">(auto-filled)</span></label>
-        <textarea id="generalPairing" readonly placeholder="Select a beverage to auto-fill…"></textarea>
-      </div>
-
-      <div class="field">
-        <label>House Pairing</label>
-        <textarea id="housePairing" placeholder="Leave blank to use the auto-filled general pairing above — or write your own to override it here."></textarea>
-      </div>
-
-      <div class="field">
         <label>Flavor Profile <span style="font-size:0.7rem;color:var(--text-muted)">(auto-filled)</span></label>
         <textarea id="flavorProfile" readonly placeholder="Select a beverage to auto-fill…"></textarea>
       </div>
@@ -472,7 +462,6 @@
     selectedBeverage = bev;
     beverageInput.value = bev.name;
     $('beverageId').value = bev.id;
-    $('generalPairing').value = bev.general_pairing || '';
     $('flavorProfile').value = bev.flavor_profile || '';
     if (!getSelectedTypes().length) setSelectedTypes([bev.type]);
     // Relinking to a catalog beverage resets the override baseline to that beverage's
@@ -499,11 +488,9 @@
     selectedBeverage = null;
     beverageInput.value = '';
     $('beverageId').value = '';
-    $('generalPairing').value = '';
     $('flavorProfile').value = '';
     $('houseFlavorProfile').value = '';
     $('sommelierComments').value = '';
-    $('housePairing').value = '';
     $('snackNotes').value = '';
     $('priceBtl').value = '';
     $('priceBtg').value = '';
@@ -526,11 +513,9 @@
     editingId = entry.id;
     beverageInput.value = entry.beverage_name || '';
     $('beverageId').value = entry.beverage_id;
-    $('generalPairing').value = entry.general_pairing || '';
     $('flavorProfile').value = entry.flavor_profile || '';
     $('houseFlavorProfile').value = entry.house_flavor_profile || '';
     $('sommelierComments').value = entry.sommelier_comments || '';
-    $('housePairing').value = entry.house_pairing || '';
     $('snackNotes').value = entry.snack_notes || '';
     $('priceBtl').value = entry.price_btl != null ? entry.price_btl : '';
     $('priceBtg').value = entry.price_btg != null ? entry.price_btg : '';
@@ -600,7 +585,6 @@
     fd.append('beverage_id', bevId);
     fd.append('rack_id', $('rackId').value);
     fd.append('sommelier_comments', $('sommelierComments').value);
-    fd.append('house_pairing', $('housePairing').value);
     fd.append('house_flavor_profile', $('houseFlavorProfile').value);
     fd.append('house_name', houseName);
     fd.append('house_type', houseType);
@@ -853,6 +837,38 @@
     renderPairingList(pairings, itemId);
   }
 
+  // Note editor shared by both pairing lists: shows the AI-generated note (read-only)
+  // and an editable House override saved per-entry via PATCH. Blank clears the override.
+  function buildPairingNoteEditor(p, patchUrl) {
+    const wrap = document.createElement('div');
+    wrap.className = 'pairing-note-edit';
+    if (p.ai_pairing_text) {
+      const ai = document.createElement('div');
+      ai.className = 'pairing-ai-note';
+      ai.textContent = p.ai_pairing_text;
+      wrap.appendChild(ai);
+    }
+    const ta = document.createElement('textarea');
+    ta.className = 'pairing-house-note';
+    ta.placeholder = 'House note — leave blank to use the note above, or write your own.';
+    ta.value = p.house_pairing_text || '';
+    const btn = document.createElement('button');
+    btn.className = 'btn-save-note';
+    btn.textContent = 'Save note';
+    btn.addEventListener('click', async () => {
+      const r = await fetch(patchUrl, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ house_pairing_text: ta.value }),
+      });
+      if (r.ok) { p.house_pairing_text = ta.value.trim() || null; showToast('Note saved'); }
+      else showToast('Save failed', true);
+    });
+    wrap.appendChild(ta);
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
   function renderPairingList(pairings, itemId) {
     const list = $('pairingList');
     if (!pairings.length) {
@@ -861,6 +877,8 @@
     }
     list.innerHTML = '';
     pairings.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'pairing-item';
       const row = document.createElement('div');
       row.className = 'pairing-row';
       row.innerHTML = `
@@ -875,7 +893,9 @@
         if (res.ok) loadPairings(itemId);
         else showToast('Remove failed', true);
       });
-      list.appendChild(row);
+      item.appendChild(row);
+      item.appendChild(buildPairingNoteEditor(p, `/api/${slug}/menu-items/${itemId}/pairings/${p.pairing_id}`));
+      list.appendChild(item);
     });
   }
 
@@ -939,6 +959,8 @@
     }
     list.innerHTML = '';
     pairings.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'pairing-item';
       const row = document.createElement('div');
       row.className = 'pairing-row';
       row.innerHTML = `
@@ -953,7 +975,9 @@
         if (r.ok) loadWinePairings(wineListId);
         else showToast('Remove failed', true);
       });
-      list.appendChild(row);
+      item.appendChild(row);
+      item.appendChild(buildPairingNoteEditor(p, `/api/${slug}/wine-list/${wineListId}/pairings/${p.pairing_id}`));
+      list.appendChild(item);
     });
   }
 
