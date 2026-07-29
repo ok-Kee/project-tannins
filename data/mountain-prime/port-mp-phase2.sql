@@ -1,4 +1,4 @@
--- Mountain Prime Phase 2 data port — generated 2026-07-29T03:52:49.289Z
+-- Mountain Prime Phase 2 data port — generated 2026-07-29T04:01:04.781Z
 -- Additive + idempotent. Matches prod rows by name; never touches other tenants.
 -- Apply: cp /data/tannins.db /data/tannins.db.bak.$(date +%s) && sqlite3 /data/tannins.db < data/mountain-prime/port-mp-phase2.sql
 BEGIN;
@@ -164,12 +164,12 @@ Bursts with bright, candy-sweet orange leading the way, layered with juicy artif
   ('Wild River IPA Series','Beer','Bold citrus and tropical fruit notes — think grapefruit, mango, and pine resin — ride on a firm, resinous bitterness characteristic of a West Coast-style IPA. The body is medium with a clean, crisp malt backbone that keeps the hop intensity in balance. The finish is long, dry, and pleasantly bitter with a lingering citrus zest.');
 
 SELECT '!! UNMATCHED FLAVOR BEVERAGE: ' || name || ' [' || type || ']'
-  FROM _pf f WHERE NOT EXISTS (SELECT 1 FROM beverages b WHERE b.name=f.name AND b.type=f.type);
+  FROM _pf f WHERE NOT EXISTS (SELECT 1 FROM beverages b WHERE b.name=f.name);
 
 UPDATE beverages SET flavor_profile =
-    (SELECT f.flavor FROM _pf f WHERE f.name=beverages.name AND f.type=beverages.type)
+    (SELECT f.flavor FROM _pf f WHERE f.name=beverages.name)
   WHERE (flavor_profile IS NULL OR flavor_profile='')
-    AND EXISTS (SELECT 1 FROM _pf f WHERE f.name=beverages.name AND f.type=beverages.type);
+    AND EXISTS (SELECT 1 FROM _pf f WHERE f.name=beverages.name);
 
 -- ===== Menu pairings (matched by dish name + beverage name/type, tenant-scoped) =====
 CREATE TEMP TABLE _pp (dish TEXT, bev TEXT, bevtype TEXT, ai TEXT, house TEXT, sort INT);
@@ -675,7 +675,7 @@ INSERT INTO _pp (dish,bev,bevtype,ai,house,sort) VALUES
 SELECT '!! UNMATCHED PAIRING DISH: ' || dish FROM _pp p WHERE NOT EXISTS
   (SELECT 1 FROM menu_items mi JOIN restaurants r ON r.id=mi.restaurant_id WHERE r.slug='mountain-prime' AND mi.name=p.dish);
 SELECT '!! UNMATCHED PAIRING BEVERAGE: ' || bev FROM _pp p WHERE NOT EXISTS
-  (SELECT 1 FROM wine_list wl JOIN beverages b ON b.id=wl.beverage_id JOIN restaurants r ON r.id=wl.restaurant_id WHERE r.slug='mountain-prime' AND b.name=p.bev AND b.type=p.bevtype);
+  (SELECT 1 FROM wine_list wl JOIN beverages b ON b.id=wl.beverage_id JOIN restaurants r ON r.id=wl.restaurant_id WHERE r.slug='mountain-prime' AND b.name=p.bev);
 
 INSERT OR IGNORE INTO menu_item_pairings (menu_item_id, wine_list_id, ai_pairing_text, house_pairing_text, sort_order)
   SELECT mi.id, wl.id, p.ai, p.house, p.sort
@@ -683,7 +683,7 @@ INSERT OR IGNORE INTO menu_item_pairings (menu_item_id, wine_list_id, ai_pairing
   JOIN restaurants r ON r.slug='mountain-prime'
   JOIN menu_items mi ON mi.restaurant_id=r.id AND mi.name=p.dish
   JOIN wine_list wl ON wl.restaurant_id=r.id
-  JOIN beverages b ON b.id=wl.beverage_id AND b.name=p.bev AND b.type=p.bevtype;
+  JOIN beverages b ON b.id=wl.beverage_id AND b.name=p.bev;
 
 COMMIT;
 
