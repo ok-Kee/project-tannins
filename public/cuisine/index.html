@@ -80,6 +80,67 @@
 
   let menuItems = [];
 
+  // ── Pairing display sampling ───────────────────────────────────────────────
+  // Dishes can have many pairings (e.g. steak → 30+). For the guest view we cap
+  // the display at 5, chosen to span a price range: 2 low, 2 mid, 1 expensive,
+  // using bottle price (falling back to glass). Tiers are relative to this dish's
+  // own priced pairings (tertiles). Dishes with ≤5 pairings show all. The full
+  // set stays in the DB and admin/other views are unaffected. Selection is cached
+  // per dish so it stays stable for the life of the page (a reload re-samples).
+  const DISPLAY_CAP = 5;
+  const sampleCache = new Map();
+
+  function priceOf(p) {
+    return p.price_btl != null ? p.price_btl : (p.price_btg != null ? p.price_btg : null);
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function samplePairings(pairings) {
+    if (pairings.length <= DISPLAY_CAP) return pairings;
+
+    const priced = pairings.filter(p => priceOf(p) != null)
+                           .sort((a, b) => priceOf(a) - priceOf(b));
+    const unpriced = pairings.filter(p => priceOf(p) == null);
+
+    const n = priced.length;
+    const t1 = Math.floor(n / 3);
+    const t2 = Math.floor((2 * n) / 3);
+    const low = priced.slice(0, t1);
+    const mid = priced.slice(t1, t2);
+    const high = priced.slice(t2);
+
+    const picked = [];
+    const seen = new Set();
+    const pickFrom = (pool, count) => {
+      for (const p of shuffle(pool)) {
+        if (picked.length >= DISPLAY_CAP || count <= 0) break;
+        if (seen.has(p)) continue;
+        seen.add(p);
+        picked.push(p);
+        count--;
+      }
+    };
+
+    pickFrom(low, 2);
+    pickFrom(mid, 2);
+    pickFrom(high, 1);
+    // Backfill to the cap if a tier was short (or many wines lack prices).
+    if (picked.length < DISPLAY_CAP) {
+      pickFrom([...low, ...mid, ...high, ...unpriced], DISPLAY_CAP - picked.length);
+    }
+
+    // Preserve the sommelier's intended ordering for the chosen wines.
+    return picked.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  }
+
   // ── Load menu items ────────────────────────────────────────────────────────
   async function init() {
     const [restaurantRes, menuRes] = await Promise.all([
@@ -154,7 +215,12 @@
 
     const res = await fetch(`/api/${slug}/menu-items/${item.id}/pairings`);
     const pairings = await res.json();
-    renderPairings(pairings);
+    let shown = sampleCache.get(item.id);
+    if (!shown) {
+      shown = samplePairings(pairings);
+      sampleCache.set(item.id, shown);
+    }
+    renderPairings(shown);
   }
 
   function renderPairings(pairings) {

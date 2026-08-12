@@ -49,7 +49,12 @@ restaurant's own data; the override just edits the wording.
 
 **Guest views:** the server beverage modal renders a "Pairs With" chip list plus a "Pairing"
 section listing each paired dish with its `house_pairing_text || ai_pairing_text`; the cuisine
-dish→beverage modal shows the specific pairing's note. **Admin:** the per-entry note is edited
+dish→beverage modal shows the specific pairing's note. **Display cap:** the cuisine dish→wine
+list shows at most 5 pairings per dish, sampled client-side for a price spread — 2 low, 2 mid,
+1 expensive by `price_btl ?? price_btg`, with tiers taken as tertiles of *that dish's* priced
+pairings (dishes with ≤5 show all). The sample is stable per page load (a reload re-samples);
+the DB keeps every pairing and the `/menu-items/:id/pairings` endpoint (shared with admin) is
+unchanged. **Admin:** the per-entry note is edited
 inline in the Menu Pairings list (AI note shown read-only, House note editable, saved via
 `PATCH …/pairings/:pairingId`); the old global General/House Pairing textareas were removed.
 

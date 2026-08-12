@@ -38,7 +38,8 @@ A **tenant is a row in `restaurants`**, keyed by a URL `slug`. Everything is sco
 - **Server** (`public/server/`) — floor-facing wine lookup by rack # or name; opens a detail
   modal per wine. No login.
 - **Cuisine** (`public/cuisine/`) — dish-first: browse menu items, see paired wines (same
-  detail modal). No login.
+  detail modal). No login. A dish with >5 pairings shows only 5, sampled for a price
+  spread (see data-model.md "Menu pairings"); the DB keeps all pairings.
 - **Admin** (`public/admin/`) — Basic-Auth panel: manage wines, prices, racks, menu items,
   pairings, logo/theme.
 
