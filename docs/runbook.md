@@ -12,54 +12,51 @@
   per-tenant password env for each new tenant if you wire one).
 
 ## Preview environments (per-PR)
-Uses Render **Blueprint Preview Environments**, enabled purely by `render.yaml`
-(`previews.generation: automatic`) on the linked branch — **no dashboard toggle**. **Every
-pull request gets its own throwaway, fully-running copy of the service** at a
-`…-pr-<n>.onrender.com` URL.
+We use Render's **Service Previews** — the per-service **"Pull Request Previews"** toggle on
+the `project-tannins` service (Settings → Previews). With it **on**, every open PR gets its
+own throwaway, fully-running copy at a `…-pr-<n>.onrender.com` URL, destroyed when the PR is
+merged/closed. (The preview link shows on the PR and on the service's Previews list.)
 
-> ⚠️ **Do NOT enable the per-service "Pull Request Previews" toggle** (Render's *Service
-> Previews* feature). It's a *different* mechanism that creates single-service previews and
-> **does not run `initialDeployHook`**, so the demo tenant never seeds and the preview comes
-> up empty. We rely on Blueprint Preview Environments; leave Service Previews off.
-
-- **Skip** a preview for a PR by putting `[skip preview]` in the PR title.
-- Previews auto-expire after **7 days** idle (`previews.expireAfterDays`) and are destroyed
-  when the PR is merged or closed.
-- **Cost:** each preview runs a real `starter` instance + disk, billed prorated per second.
-  Close/merge PRs you're done with; idle ones clean themselves up.
+> **Why not Blueprint "Preview Environments"?** That's the fancier mechanism (`previews:`
+> block + `initialDeployHook`, cleaner seeding) — but it **requires a paid Render Pro
+> workspace**, which this project isn't on. On the current plan its PRs create "No
+> deployments" (the Blueprint recognizes the PR but spins nothing up). So we use Service
+> Previews instead. If you ever upgrade to Pro, switch to Preview Environments + an
+> `initialDeployHook` — it's the better long-term design.
 
 **Two things are true of every preview (by Render design, not a bug):**
-1. **The disk starts EMPTY** — Render copies no production data into a preview. So there's no
-   real client data to leak, and also nothing to look at out of the box.
-2. **`sync: false` secrets are NOT copied in** — `ANTHROPIC_API_KEY` and `TANNINS_BAR_PASS`
-   don't exist in previews. That's fine: neither is referenced by `src/app.js` / `db-init.js`
-   (both are seed-time only), so the app boots and serves without them.
+1. **The disk starts EMPTY** — Render copies no production data into a preview. No real client
+   data to leak, and nothing to look at out of the box.
+2. **Config + `sync:false` secrets:** a Service Preview **inherits its build/start commands and
+   env vars from the base service** (which tracks `main`) — so seeding must live in `main`'s
+   config, not just a PR branch. `sync:false` secrets (`ANTHROPIC_API_KEY`, `TANNINS_BAR_PASS`)
+   still aren't populated, which is fine — neither is referenced by `src/app.js`/`db-init.js`.
 
-To make previews usable despite the empty disk, the service's **`initialDeployHook`** runs
-`db-init.js` then `scripts/seed-preview-demo.js`, seeding a throwaway **demo tenant**:
+To make previews usable despite the empty disk, the **`startCommand`** runs `db-init.js` then
+`scripts/seed-preview-demo.js` before `src/app.js`, seeding a throwaway **demo tenant**:
 - Guest: `/demo` · Cuisine: `/demo/cuisine` · Server: `/demo/server`
 - Admin: `/demo/de` — user `admin`, password `preview` (override with `DEMO_TENANT_PASS`).
 
-**How it stays off prod:** `initialDeployHook` runs *once*, on a service's first successful
-deploy (Render's documented way to seed a new preview DB). Production deployed long before the
-hook existed, so it never runs there; each new preview environment runs it once. The seed is
-also idempotent (no-op if `demo` already exists). No env-var gate is used or needed.
+**How it never touches prod (two independent guards, in `seed-preview-demo.js`):**
+1. **Skip if the DB already has any tenant.** Prod's shared multi-tenant DB always does —
+   onboarding a client just adds another row — so real data is never touched and **you never
+   have to strip demo data from prod** (the demo tenant only ever lives on a preview's own
+   ephemeral disk). A fresh preview disk has zero tenants → it seeds.
+2. **Skip if `RENDER_GIT_BRANCH === 'main'`** (the prod branch) — belt-and-suspenders so even a
+   hypothetically-empty prod would not get seeded.
+It's also idempotent (no-op if `demo` already exists). The deploy log prints the decision
+(`existing_tenants=… RENDER_GIT_BRANCH=…`).
 
 **Gotchas learned the hard way (don't re-try these):**
-- **`IS_PULL_REQUEST` is not reliably present** — it was `undefined` in both the
-  `initialDeployHook` and `startCommand` environments of our preview. Do **not** gate the seed
-  on it.
-- **Seeding via `startCommand` was a dead end** — a wrong turn taken while the preview was
-  mistakenly a *Service Preview*. The fix was to use Blueprint Preview Environments +
-  `initialDeployHook`, not to move the seed around.
-- If a preview comes up empty, check its **first-deploy log** for a "running initial deploy
-  hook" line and `seed-preview-demo` output. No hook line = it's a Service Preview, not a
-  Preview Environment (see the warning above).
+- **`IS_PULL_REQUEST` is not reliably set** — it was `undefined` in the preview here. Don't
+  gate on it.
+- **`initialDeployHook` does nothing under Service Previews** — it's a Blueprint Preview
+  Environments (Pro) feature. That's why seeding is in the `startCommand`.
+- **Seed config must be on `main`**, because Service Previews inherit the base service's
+  commands. A seed added only on a PR branch won't run in that PR's preview.
 
 **AI enrichment can't run in a preview** by design (no real `ANTHROPIC_API_KEY`); the demo
-data ships with `general_pairing` / `flavor_profile` pre-filled. If you ever need enrichment
-in a preview, create a Render **environment group** with the real key and reference it from
-`render.yaml` (`sync: false` vars alone won't reach previews).
+data ships with `general_pairing` / `flavor_profile` pre-filled.
 
 ## Provisioning a new tenant
 No create-restaurant API exists. In a **Render shell**, with the code deployed:
