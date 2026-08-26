@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Easily Paired</title>
-  <link rel="manifest" href="/public/manifest.json">
+  <link rel="manifest" id="pwa-manifest">
+  <script>var _s=window.location.pathname.split("/")[1];document.getElementById("pwa-manifest").href=(_s?"/"+_s:"")+"/manifest.json";</script>
   <script>try{if(localStorage.getItem('contrast')==='high')document.documentElement.setAttribute('data-contrast','high')}catch(e){}</script>
   <link rel="stylesheet" href="/public/landing/landing.css">
 </head>
