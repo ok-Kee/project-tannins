@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { basicAuth } = require('./auth');
+const db = require('./db');
 const beveragesRouter = require('./routes/beverages');
 const racksRouter = require('./routes/racks');
 const wineListRouter = require('./routes/wineList');
@@ -48,6 +49,28 @@ app.use('/api/:slug/wine-list', (req, res, next) => {
 app.use('/api/:slug/menu-items', menuItemsRouter);
 
 // ── Page routes ────────────────────────────────────────────────────────────
+
+// Dynamic PWA manifest — per-tenant name and theme colours
+app.get('/:slug/manifest.json', (req, res) => {
+  const { slug } = req.params;
+  const row = db.prepare('SELECT name, theme_accent, theme_bg FROM restaurants WHERE slug = ?').get(slug);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+
+  const manifest = {
+    name: row.name,
+    short_name: row.name,
+    start_url: `/${slug}`,
+    display: 'standalone',
+    background_color: row.theme_bg || '#1a1a1a',
+    theme_color: row.theme_accent || '#8b2252',
+    // TODO: add proper 192×192 and 512×512 PNG icons per tenant or as shared assets
+    icons: [
+      { src: '/public/easily-paired-logo.jpg', sizes: '512x512', type: 'image/jpeg' },
+    ],
+  };
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.json(manifest);
+});
 
 // Admin UI — auth required
 app.get('/:slug/de', basicAuth, (req, res) => {
