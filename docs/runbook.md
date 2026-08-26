@@ -34,13 +34,20 @@ To make previews usable despite the empty disk, the service's `startCommand` run
 - Guest: `/demo` · Cuisine: `/demo/cuisine` · Server: `/demo/server`
 - Admin: `/demo/de` — user `admin`, password `preview` (override with `DEMO_TENANT_PASS`).
 
-The seed script is **hard-gated on `IS_PULL_REQUEST=true`** (a runtime var Render sets only
-inside previews) and is idempotent, so it seeds a preview once and is a no-op on production
-(and on every subsequent preview boot). It lives in `startCommand` rather than
-`initialDeployHook` deliberately: the startCommand runs in the full runtime env where
-`IS_PULL_REQUEST` is guaranteed present, and re-applies on redeploys. (`initialDeployHook`
-was tried first but the demo tenant never seeded — the hook's environment didn't carry
-`IS_PULL_REQUEST`, so the guard skipped.)
+**How it knows it's a preview (and never seeds prod):** the seed **only runs when the DB has
+zero tenants** — true on a fresh preview disk, never true on prod (which always has
+`tannins-bar` + `mountain-prime`). It's also idempotent (no-op if `demo` already exists), so
+it seeds a preview exactly once. `IS_PULL_REQUEST=true` forces a seed too, but is **not**
+relied on — see the gotcha below.
+
+**Gotchas learned the hard way (don't re-try these):**
+- `initialDeployHook` did **not** work for seeding — the demo tenant never appeared. The
+  hook's environment didn't carry `IS_PULL_REQUEST`. Moved to `startCommand`.
+- `IS_PULL_REQUEST` was **also absent in the preview's `startCommand`** environment (logged as
+  `undefined`), so gating on it skipped the seed. That's why the gate is the empty-DB check,
+  not the env var. If you ever need a reliable preview-only signal, verify what Render
+  actually sets by checking the deploy log line the script prints
+  (`IS_PULL_REQUEST=… existing_tenants=…`).
 
 **AI enrichment can't run in a preview** by design (no real `ANTHROPIC_API_KEY`); the demo
 data ships with `general_pairing` / `flavor_profile` pre-filled. If you ever need enrichment

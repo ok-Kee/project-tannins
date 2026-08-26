@@ -8,18 +8,12 @@ const path = require('path');
 // previews), so without this a preview boots with schema only and zero tenants —
 // nothing to visit. See docs/runbook.md ("Preview environments").
 //
-// SAFETY: this must NEVER run against production. Render sets IS_PULL_REQUEST=true
-// only inside preview environments; we hard-gate on it. render.yaml wires this into
-// the service `initialDeployHook` (which runs once, on a service's first deploy),
-// and prod already exists so its hook never re-fires — but the env guard is the real
-// backstop. The script is also idempotent (no-op if the demo tenant already exists).
-
-if (process.env.IS_PULL_REQUEST !== 'true') {
-  console.log(
-    'seed-preview-demo: IS_PULL_REQUEST is not "true" — not a preview environment, skipping (no changes made).'
-  );
-  process.exit(0);
-}
+// SAFETY: this must NEVER run against production. The gate is that we only seed when
+// the DB has ZERO tenants — true on a fresh preview disk, never true on prod (which
+// always has real tenants). We ALSO seed unconditionally when IS_PULL_REQUEST=true,
+// but do not rely on it: that variable turned out not to be present in the preview's
+// startCommand environment, which is why the empty-DB check is the primary signal.
+// The script is additionally idempotent (no-op if the demo tenant already exists).
 
 // Resolve the DB path the SAME way the app does (src/db.js / create-tenant.js):
 // honor DB_PATH, then DATA_DIR (the Render persistent disk), then local ./db.
@@ -92,6 +86,23 @@ async function main() {
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+
+  const tenantCount = db.prepare('SELECT COUNT(*) AS c FROM restaurants').get().c;
+  const isPreview = process.env.IS_PULL_REQUEST === 'true';
+  // Log the actual signals so the deploy log shows exactly why we did/didn't seed.
+  console.log(
+    `seed-preview-demo: db=${dbPath} IS_PULL_REQUEST=${JSON.stringify(process.env.IS_PULL_REQUEST)} existing_tenants=${tenantCount}`
+  );
+
+  // Gate: seed only on a fresh (empty) DB, or when explicitly flagged as a preview.
+  // Prod always has tenants, so it never seeds here.
+  if (tenantCount > 0 && !isPreview) {
+    console.log(
+      'seed-preview-demo: DB already has tenants and not a preview — skipping (no changes made).'
+    );
+    db.close();
+    return;
+  }
 
   const existing = db.prepare('SELECT id, name FROM restaurants WHERE slug = ?').get(SLUG);
   if (existing) {
