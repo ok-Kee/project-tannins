@@ -3,23 +3,19 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcrypt');
 const path = require('path');
 
-// Seeds a throwaway "demo" tenant so Render PREVIEW environments have something to
-// show. A preview's persistent disk starts empty (Render copies no data into
-// previews), so without this a preview boots with schema only and zero tenants —
+// Seeds a throwaway "demo" tenant so a Render PR preview (Service Preview) has
+// something to show. A preview's persistent disk starts empty (Render copies no data
+// into previews), so without this a preview boots with schema only and zero tenants —
 // nothing to visit. See docs/runbook.md ("Preview environments").
 //
-// SAFETY: this must NEVER run against production. Render sets IS_PULL_REQUEST=true
-// only inside preview environments; we hard-gate on it. render.yaml wires this into
-// the service `initialDeployHook` (which runs once, on a service's first deploy),
-// and prod already exists so its hook never re-fires — but the env guard is the real
-// backstop. The script is also idempotent (no-op if the demo tenant already exists).
-
-if (process.env.IS_PULL_REQUEST !== 'true') {
-  console.log(
-    'seed-preview-demo: IS_PULL_REQUEST is not "true" — not a preview environment, skipping (no changes made).'
-  );
-  process.exit(0);
-}
+// Wired into the startCommand (render.yaml). It runs on EVERY boot, so it must be
+// safe on production. Two independent guards keep demo data off prod (see main()):
+//   1. Skip if the DB already has ANY tenant. Prod's shared multi-tenant DB always
+//      does (onboarding a client just adds another row), so real data is never
+//      touched. A fresh preview disk has zero tenants → seeds.
+//   2. Skip if RENDER_GIT_BRANCH === 'main' (the prod branch) — a belt-and-suspenders
+//      so even a hypothetically-empty prod would not get demo data.
+// It's also idempotent (no-op if the demo tenant already exists).
 
 // Resolve the DB path the SAME way the app does (src/db.js / create-tenant.js):
 // honor DB_PATH, then DATA_DIR (the Render persistent disk), then local ./db.
@@ -92,6 +88,18 @@ async function main() {
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+
+  // Guard against ever seeding production (see file header). Either condition alone
+  // is sufficient; both are logged so the deploy log shows exactly what was decided.
+  const tenantCount = db.prepare('SELECT COUNT(*) AS c FROM restaurants').get().c;
+  const branch = process.env.RENDER_GIT_BRANCH; // 'main' on prod; PR branch in a preview
+  if (tenantCount > 0 || branch === 'main') {
+    console.log(
+      `seed-preview-demo: skipping — not an empty preview DB (existing_tenants=${tenantCount}, RENDER_GIT_BRANCH=${JSON.stringify(branch)}).`
+    );
+    db.close();
+    return;
+  }
 
   const existing = db.prepare('SELECT id, name FROM restaurants WHERE slug = ?').get(SLUG);
   if (existing) {
