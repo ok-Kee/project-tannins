@@ -1,3 +1,13 @@
+# Preview environments: every pull request gets its own throwaway, fully-running
+# copy of the service (skip a PR with "[skip preview]" in its title). Idle previews
+# are auto-cleaned after 7 days; a preview is destroyed when its PR is merged/closed.
+# NOTE: a preview's persistent disk starts EMPTY (Render copies no prod data), and
+# sync:false secrets are NOT copied to previews — the app needs neither to boot, and
+# the demo tenant is seeded by initialDeployHook below. See docs/runbook.md.
+previews:
+  generation: automatic
+  expireAfterDays: 7
+
 services:
   - type: web
     name: project-tannins
@@ -5,6 +15,11 @@ services:
     plan: starter
     buildCommand: npm install
     startCommand: node scripts/db-init.js && node src/app.js
+    # Runs once on a service's FIRST deploy (prod already exists → never re-fires).
+    # In practice this only runs for new preview services; the seed script is also
+    # hard-gated on IS_PULL_REQUEST so it can never touch prod. db-init runs first
+    # because the hook fires before startCommand, so the schema must exist here.
+    initialDeployHook: node scripts/db-init.js && node scripts/seed-preview-demo.js
     disk:
       name: tannins-data
       mountPath: /data

@@ -2,14 +2,46 @@
 
 ## Deployment (Render)
 - Defined by `render.yaml` (a Render **Blueprint** — changes to it auto-sync on push).
-- **Push to `main` deploys to production.** No preview environment exists; branch first for
-  risky changes and merge when ready.
+- **Push to `main` deploys to production.** For anything risky, open a PR and review it on
+  its **preview environment** (below) before merging.
 - `startCommand: node scripts/db-init.js && node src/app.js` — the idempotent migration runs
   on every boot *before* the app serves, so new columns/migrations apply automatically on
   deploy. Nothing to run by hand for a schema change.
 - Persistent disk mounts at `/data` (`DATA_DIR=/data`); both `tannins.db` and `uploads/` live
   there. Secrets set in the Render dashboard: `ANTHROPIC_API_KEY`, `TANNINS_BAR_PASS` (and a
   per-tenant password env for each new tenant if you wire one).
+
+## Preview environments (per-PR)
+Enabled in `render.yaml` (`previews.generation: automatic`). **Every pull request gets its
+own throwaway, fully-running copy of the service** at a `…-pr-<n>.onrender.com` URL.
+
+- **Skip** a preview for a PR by putting `[skip preview]` in the PR title.
+- Previews auto-expire after **7 days** idle (`previews.expireAfterDays`) and are destroyed
+  when the PR is merged or closed.
+- **Cost:** each preview runs a real `starter` instance + disk, billed prorated per second.
+  Close/merge PRs you're done with; idle ones clean themselves up.
+
+**Two things are true of every preview (by Render design, not a bug):**
+1. **The disk starts EMPTY** — Render copies no production data into a preview. So there's no
+   real client data to leak, and also nothing to look at out of the box.
+2. **`sync: false` secrets are NOT copied in** — `ANTHROPIC_API_KEY` and `TANNINS_BAR_PASS`
+   don't exist in previews. That's fine: neither is referenced by `src/app.js` / `db-init.js`
+   (both are seed-time only), so the app boots and serves without them.
+
+To make previews usable despite the empty disk, the service's `initialDeployHook` runs
+`db-init.js` then `scripts/seed-preview-demo.js` on a preview's first boot, seeding a
+throwaway **demo tenant**:
+- Guest: `/demo` · Cuisine: `/demo/cuisine` · Server: `/demo/server`
+- Admin: `/demo/de` — user `admin`, password `preview` (override with `DEMO_TENANT_PASS`).
+
+The seed script is **hard-gated on `IS_PULL_REQUEST=true`** (which Render sets only inside
+previews) and is idempotent, so it can never touch production. `initialDeployHook` also only
+fires on a service's *first* deploy, and prod already exists — so it never re-runs there.
+
+**AI enrichment can't run in a preview** by design (no real `ANTHROPIC_API_KEY`); the demo
+data ships with `general_pairing` / `flavor_profile` pre-filled. If you ever need enrichment
+in a preview, create a Render **environment group** with the real key and reference it from
+`render.yaml` (`sync: false` vars alone won't reach previews).
 
 ## Provisioning a new tenant
 No create-restaurant API exists. In a **Render shell**, with the code deployed:

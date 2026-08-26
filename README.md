@@ -110,3 +110,5 @@ Admin routes use HTTP Basic Auth. Credentials are stored per-restaurant in the `
 ## Deploying to Render
 
 The `render.yaml` in the repo root defines the service. Set `ANTHROPIC_API_KEY` and `TANNINS_BAR_PASS` as secret environment variables in the Render dashboard; everything else is pre-configured. The persistent disk mounts at `/data`, where both the SQLite database and uploaded images are stored.
+
+**Preview environments** are enabled: every pull request gets its own throwaway running copy of the service (skip with `[skip preview]` in the PR title). A preview's disk starts empty, so it self-seeds a demo tenant (`/demo`, admin `admin`/`preview`) on first boot. See [`docs/runbook.md`](docs/runbook.md#preview-environments-per-pr) for the full workflow and gotchas.

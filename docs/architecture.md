@@ -8,7 +8,7 @@
   (an ES module imported by every page).
 - **Auth:** HTTP Basic Auth (bcrypt) on admin routes only; server/cuisine views are public.
 - **AI:** Anthropic Claude API, used only by seed scripts to generate pairing/flavor copy.
-- **Hosting:** Render web service + 10 GB persistent disk mounted at `/data`.
+- **Hosting:** Render web service + 10 GB persistent disk mounted at `/data`. Push to `main` deploys prod; every PR gets a self-seeding preview environment — see [`runbook.md`](runbook.md#preview-environments-per-pr).
 
 ## Multi-tenancy
 A **tenant is a row in `restaurants`**, keyed by a URL `slug`. Everything is scoped by slug:
