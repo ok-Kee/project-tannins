@@ -28,15 +28,19 @@ own throwaway, fully-running copy of the service** at a `…-pr-<n>.onrender.com
    don't exist in previews. That's fine: neither is referenced by `src/app.js` / `db-init.js`
    (both are seed-time only), so the app boots and serves without them.
 
-To make previews usable despite the empty disk, the service's `initialDeployHook` runs
-`db-init.js` then `scripts/seed-preview-demo.js` on a preview's first boot, seeding a
-throwaway **demo tenant**:
+To make previews usable despite the empty disk, the service's `startCommand` runs
+`db-init.js` then `scripts/seed-preview-demo.js` before `src/app.js`, seeding a throwaway
+**demo tenant**:
 - Guest: `/demo` · Cuisine: `/demo/cuisine` · Server: `/demo/server`
 - Admin: `/demo/de` — user `admin`, password `preview` (override with `DEMO_TENANT_PASS`).
 
-The seed script is **hard-gated on `IS_PULL_REQUEST=true`** (which Render sets only inside
-previews) and is idempotent, so it can never touch production. `initialDeployHook` also only
-fires on a service's *first* deploy, and prod already exists — so it never re-runs there.
+The seed script is **hard-gated on `IS_PULL_REQUEST=true`** (a runtime var Render sets only
+inside previews) and is idempotent, so it seeds a preview once and is a no-op on production
+(and on every subsequent preview boot). It lives in `startCommand` rather than
+`initialDeployHook` deliberately: the startCommand runs in the full runtime env where
+`IS_PULL_REQUEST` is guaranteed present, and re-applies on redeploys. (`initialDeployHook`
+was tried first but the demo tenant never seeded — the hook's environment didn't carry
+`IS_PULL_REQUEST`, so the guard skipped.)
 
 **AI enrichment can't run in a preview** by design (no real `ANTHROPIC_API_KEY`); the demo
 data ships with `general_pairing` / `flavor_profile` pre-filled. If you ever need enrichment
