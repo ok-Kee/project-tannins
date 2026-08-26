@@ -19,6 +19,7 @@
   <span class="mode-badge new" id="modeBadge">New Entry</span>
   <button class="btn-nav-link btn-contrast" id="btnContrast" type="button" aria-pressed="false" title="Toggle high-contrast mode"><span aria-hidden="true">◐</span><span>High Contrast</span></button>
   <a class="btn-nav-link" id="btnServerView" href="#">Server View</a>
+  <button class="btn-nav-link" id="btnLogout" type="button" title="Clear this device's saved admin login">Log out</button>
 </header>
 
 <div class="layout">
@@ -243,6 +244,26 @@
   document.getElementById('slugBadge').textContent = slug;
   document.getElementById('homeLink').href = `/${slug}`;
   document.getElementById('btnServerView').href = `/${slug}/server`;
+
+  // Log out of the admin page. HTTP Basic Auth has no API to clear cached
+  // credentials, so we overwrite the browser's cached credential for this admin's
+  // protection space with a throwaway bogus one via an XHR that gets a 401. The
+  // next visit to /:slug/de then re-prompts instead of silently reusing the login
+  // — so a server can't accidentally reopen admin on a shared tablet. Reliable in
+  // Chrome/Firefox; Safari may keep credentials until the tab/browser is closed.
+  document.getElementById('btnLogout').addEventListener('click', () => {
+    const done = () => { location.href = `/${slug}/server`; };
+    try {
+      const xhr = new XMLHttpRequest();
+      // Passing username/password to open() is what makes the browser cache these
+      // (invalid) credentials for the realm, evicting the real login.
+      xhr.open('GET', `/${slug}/de`, true, 'logout', 'logout-' + Date.now());
+      xhr.onloadend = done; // fires on the expected 401 (or any error)
+      xhr.send();
+    } catch (e) {
+      done();
+    }
+  });
 
   function $(id) { return document.getElementById(id); }
   function fmt$(v) { return v != null ? `$${Number(v).toFixed(2)}` : '—'; }
