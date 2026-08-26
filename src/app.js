@@ -63,7 +63,10 @@ app.get('/:slug/manifest.json', (req, res) => {
     display: 'standalone',
     background_color: row.theme_bg || '#1a1a1a',
     theme_color: row.theme_accent || '#8b2252',
-    icons: [],
+    // TODO: add proper 192×192 and 512×512 PNG icons per tenant or as shared assets
+    icons: [
+      { src: '/public/easily-paired-logo.jpg', sizes: '512x512', type: 'image/jpeg' },
+    ],
   };
   res.setHeader('Content-Type', 'application/manifest+json');
   res.json(manifest);
