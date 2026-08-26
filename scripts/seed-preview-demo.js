@@ -3,17 +3,17 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcrypt');
 const path = require('path');
 
-// Seeds a throwaway "demo" tenant so Render PREVIEW environments have something to
-// show. A preview's persistent disk starts empty (Render copies no data into
-// previews), so without this a preview boots with schema only and zero tenants —
+// Seeds a throwaway "demo" tenant so a Render Blueprint PREVIEW ENVIRONMENT has
+// something to show. A preview's persistent disk starts empty (Render copies no data
+// into previews), so without this a preview boots with schema only and zero tenants —
 // nothing to visit. See docs/runbook.md ("Preview environments").
 //
-// SAFETY: this must NEVER run against production. The gate is that we only seed when
-// the DB has ZERO tenants — true on a fresh preview disk, never true on prod (which
-// always has real tenants). We ALSO seed unconditionally when IS_PULL_REQUEST=true,
-// but do not rely on it: that variable turned out not to be present in the preview's
-// startCommand environment, which is why the empty-DB check is the primary signal.
-// The script is additionally idempotent (no-op if the demo tenant already exists).
+// HOW THIS IS SAFE FOR PROD: this script is wired ONLY into the service's
+// `initialDeployHook` (render.yaml), which Render runs exactly once — on a service's
+// first successful deploy. Production had its first deploy long before this hook
+// existed, so it never runs there; each new preview environment runs it once. That
+// lifecycle is the gate — no env-var check needed. It's also idempotent (no-op if the
+// demo tenant already exists). Do not invoke it manually against the production DB.
 
 // Resolve the DB path the SAME way the app does (src/db.js / create-tenant.js):
 // honor DB_PATH, then DATA_DIR (the Render persistent disk), then local ./db.
@@ -86,23 +86,6 @@ async function main() {
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
-
-  const tenantCount = db.prepare('SELECT COUNT(*) AS c FROM restaurants').get().c;
-  const isPreview = process.env.IS_PULL_REQUEST === 'true';
-  // Log the actual signals so the deploy log shows exactly why we did/didn't seed.
-  console.log(
-    `seed-preview-demo: db=${dbPath} IS_PULL_REQUEST=${JSON.stringify(process.env.IS_PULL_REQUEST)} existing_tenants=${tenantCount}`
-  );
-
-  // Gate: seed only on a fresh (empty) DB, or when explicitly flagged as a preview.
-  // Prod always has tenants, so it never seeds here.
-  if (tenantCount > 0 && !isPreview) {
-    console.log(
-      'seed-preview-demo: DB already has tenants and not a preview — skipping (no changes made).'
-    );
-    db.close();
-    return;
-  }
 
   const existing = db.prepare('SELECT id, name FROM restaurants WHERE slug = ?').get(SLUG);
   if (existing) {

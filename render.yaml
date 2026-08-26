@@ -1,10 +1,12 @@
-# Preview environments: every pull request gets its own throwaway, fully-running
-# copy of the service (skip a PR with "[skip preview]" in its title). Idle previews
-# are auto-cleaned after 7 days; a preview is destroyed when its PR is merged/closed.
+# Blueprint Preview Environments: every pull request gets its own throwaway,
+# fully-running copy of the service (skip a PR with "[skip preview]" in its title).
+# Idle previews are auto-cleaned after 7 days; a preview is destroyed when its PR is
+# merged/closed. Enabled purely by this YAML on the linked branch — NO dashboard
+# toggle. (Do NOT also enable the per-service "Pull Request Previews" / Service
+# Previews toggle: that's a different feature that does not support initialDeployHook.)
 # NOTE: a preview's persistent disk starts EMPTY (Render copies no prod data), and
-# sync:false secrets are NOT copied to previews — the app needs neither to boot, and
-# the demo tenant is seeded by the startCommand below (guarded by IS_PULL_REQUEST).
-# See docs/runbook.md.
+# sync:false secrets are NOT copied in — the app needs neither to boot. The demo
+# tenant is seeded by initialDeployHook below. See docs/runbook.md.
 previews:
   generation: automatic
   expireAfterDays: 7
@@ -15,12 +17,11 @@ services:
     runtime: node
     plan: starter
     buildCommand: npm install
-    # seed-preview-demo runs on every boot but is hard-gated on IS_PULL_REQUEST=true
-    # (a runtime var Render sets only in previews) and is idempotent — so it seeds a
-    # preview once and is a ~no-op on prod. Kept in startCommand (not initialDeployHook)
-    # because that runs in the full runtime env where IS_PULL_REQUEST is present, and
-    # it re-applies on redeploys. `|| true` keeps a seed hiccup from blocking boot.
-    startCommand: node scripts/db-init.js && (node scripts/seed-preview-demo.js || true) && node src/app.js
+    startCommand: node scripts/db-init.js && node src/app.js
+    # Runs ONCE, on a service's first successful deploy (Render's documented way to
+    # seed a new preview's database). Prod deployed long ago, so it never runs there;
+    # each new preview environment runs it once. The seed is idempotent regardless.
+    initialDeployHook: node scripts/db-init.js && node scripts/seed-preview-demo.js
     disk:
       name: tannins-data
       mountPath: /data

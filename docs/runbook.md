@@ -12,8 +12,15 @@
   per-tenant password env for each new tenant if you wire one).
 
 ## Preview environments (per-PR)
-Enabled in `render.yaml` (`previews.generation: automatic`). **Every pull request gets its
-own throwaway, fully-running copy of the service** at a `…-pr-<n>.onrender.com` URL.
+Uses Render **Blueprint Preview Environments**, enabled purely by `render.yaml`
+(`previews.generation: automatic`) on the linked branch — **no dashboard toggle**. **Every
+pull request gets its own throwaway, fully-running copy of the service** at a
+`…-pr-<n>.onrender.com` URL.
+
+> ⚠️ **Do NOT enable the per-service "Pull Request Previews" toggle** (Render's *Service
+> Previews* feature). It's a *different* mechanism that creates single-service previews and
+> **does not run `initialDeployHook`**, so the demo tenant never seeds and the preview comes
+> up empty. We rely on Blueprint Preview Environments; leave Service Previews off.
 
 - **Skip** a preview for a PR by putting `[skip preview]` in the PR title.
 - Previews auto-expire after **7 days** idle (`previews.expireAfterDays`) and are destroyed
@@ -28,26 +35,26 @@ own throwaway, fully-running copy of the service** at a `…-pr-<n>.onrender.com
    don't exist in previews. That's fine: neither is referenced by `src/app.js` / `db-init.js`
    (both are seed-time only), so the app boots and serves without them.
 
-To make previews usable despite the empty disk, the service's `startCommand` runs
-`db-init.js` then `scripts/seed-preview-demo.js` before `src/app.js`, seeding a throwaway
-**demo tenant**:
+To make previews usable despite the empty disk, the service's **`initialDeployHook`** runs
+`db-init.js` then `scripts/seed-preview-demo.js`, seeding a throwaway **demo tenant**:
 - Guest: `/demo` · Cuisine: `/demo/cuisine` · Server: `/demo/server`
 - Admin: `/demo/de` — user `admin`, password `preview` (override with `DEMO_TENANT_PASS`).
 
-**How it knows it's a preview (and never seeds prod):** the seed **only runs when the DB has
-zero tenants** — true on a fresh preview disk, never true on prod (which always has
-`tannins-bar` + `mountain-prime`). It's also idempotent (no-op if `demo` already exists), so
-it seeds a preview exactly once. `IS_PULL_REQUEST=true` forces a seed too, but is **not**
-relied on — see the gotcha below.
+**How it stays off prod:** `initialDeployHook` runs *once*, on a service's first successful
+deploy (Render's documented way to seed a new preview DB). Production deployed long before the
+hook existed, so it never runs there; each new preview environment runs it once. The seed is
+also idempotent (no-op if `demo` already exists). No env-var gate is used or needed.
 
 **Gotchas learned the hard way (don't re-try these):**
-- `initialDeployHook` did **not** work for seeding — the demo tenant never appeared. The
-  hook's environment didn't carry `IS_PULL_REQUEST`. Moved to `startCommand`.
-- `IS_PULL_REQUEST` was **also absent in the preview's `startCommand`** environment (logged as
-  `undefined`), so gating on it skipped the seed. That's why the gate is the empty-DB check,
-  not the env var. If you ever need a reliable preview-only signal, verify what Render
-  actually sets by checking the deploy log line the script prints
-  (`IS_PULL_REQUEST=… existing_tenants=…`).
+- **`IS_PULL_REQUEST` is not reliably present** — it was `undefined` in both the
+  `initialDeployHook` and `startCommand` environments of our preview. Do **not** gate the seed
+  on it.
+- **Seeding via `startCommand` was a dead end** — a wrong turn taken while the preview was
+  mistakenly a *Service Preview*. The fix was to use Blueprint Preview Environments +
+  `initialDeployHook`, not to move the seed around.
+- If a preview comes up empty, check its **first-deploy log** for a "running initial deploy
+  hook" line and `seed-preview-demo` output. No hook line = it's a Service Preview, not a
+  Preview Environment (see the warning above).
 
 **AI enrichment can't run in a preview** by design (no real `ANTHROPIC_API_KEY`); the demo
 data ships with `general_pairing` / `flavor_profile` pre-filled. If you ever need enrichment
